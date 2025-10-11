@@ -1,0 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MockHire Design System - Corporate & Professional */
+
+
+@layer base {
+
+  
+  :root {
+    /* Professional Job Portal Color Palette - HSL values */
+    --background: 210 20% 98%; /* #F8FAFC */
+    --foreground: 222 84% 5%; /* #0F172A */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 5%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 5%;
+
+    --primary: 217 91% 60%; /* #4F46E5 */
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 213 93% 68%; /* #6366F1 */
+    
+    --secondary: 215 25% 27%; /* #334155 */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 142 76% 36%; /* #16A34A */
+    --accent-foreground: 0 0% 98%;
+
+    --success: 142 76% 36%; /* #16A34A */
+    --success-foreground: 0 0% 98%;
+    
+    --warning: 38 92% 50%; /* #F59E0B */
+    --warning-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 224 76% 32%;
+
+    /* Corporate Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.95), hsl(var(--primary-light) / 0.9));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+
+    /* Professional Shadows */
+    --shadow-elegant: 0 10px 25px -5px hsl(var(--primary) / 0.1);
+    --shadow-card: 0 4px 6px -1px hsl(var(--foreground) / 0.1);
+    --shadow-hero: 0 20px 40px -10px hsl(var(--primary) / 0.3);
+
+    /* Smooth Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 26% 14%;
+    --foreground: 249 50% 98%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 249 50% 98%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 249 50% 98%;
+
+    --primary: 213 94% 68%;
+    --primary-foreground: 220 26% 14%;
+    --primary-light: 224 76% 32%;
+
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 249 50% 98%;
+
+    --muted: 215 28% 17%;
+    --muted-foreground: 217 11% 65%;
+
+    --accent: 213 94% 68%;
+    --accent-foreground: 220 26% 14%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 249 50% 98%;
+
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 213 94% 68%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary-light)), hsl(var(--primary)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary-light) / 0.95), hsl(var(--primary) / 0.9));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer components {
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+  
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .elegant-shadow {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .smooth-transition {
+    transition: var(--transition-smooth);
+  }
+  
+  .bounce-transition {
+    transition: var(--transition-bounce);
+  }
+}
