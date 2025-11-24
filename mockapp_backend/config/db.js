@@ -2,7 +2,9 @@ import mongoose from "mongoose";
 
 async function connectDB() {
   try {
-    const uri = process.env.MONGO_URI;  // ✅ get from .env
+    const uri = process.env.MONGO_URI_LOCAL  // ✅ get from .env
+    // if(uri==="mongodb+srv://gobynow_123_2:vT5JChy5p4g8A4Ui@cluster0.7abgh0l.mongodb.net/?appName=Cluster0") return process.env.MONGO_URI_LOCAL
+    // console.log(uri)
     if (!uri) {
       throw new Error("MONGO_URI is not defined in .env file");
     }

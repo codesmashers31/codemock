@@ -1,18 +1,18 @@
-import Navigation from "@/components/Navigation";
-import Sidebar from "@/components/Sidebar";
-// import ProfileCard from "@/components/ProfileCard";
-import InfoPanel from "@/components/InfoPanel";
-// import AdBanner from "@/components/AdBanner";
-import Footer from "@/components/Footer";
+import Navigation from "../components/Navigation";
+import Sidebar from "../components/Sidebar";
+// import ProfileCard from "../components/ProfileCard";
+import InfoPanel from "../components/InfoPanel";
+// import AdBanner from "../components/AdBanner";
+import Footer from "../components/Footer";
 
-import CoachSessionCard from "@/components/CoachSessionCard";
-import PromoBanner from "@/components/PromoBanner";
-import HeroSection from "@/components/HeroSection";
+import CoachSessionCard from "../components/CoachSessionCard";
+import PromoBanner from "../components/PromoBanner";
+import HeroSection from "../components/HeroSection";
 
-import BottomNav from "@/components/BottomNav";
+import BottomNav from "../components/BottomNav";
 const Index = () => (
   <>
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-muted/20 to-background">
+    <div className="min-h-screen flex flex-col bg-linear-to-br from-background via-muted/20 to-background">
       <Navigation />
       <HeroSection />
 

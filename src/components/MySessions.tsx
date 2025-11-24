@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { 
   Calendar, 
   Video, 
@@ -14,18 +14,37 @@ import {
   Users,
   Settings
 } from "lucide-react";
-import Navigation from "@/components/Navigation";
-import BottomNav from "@/components/BottomNav";
+import Navigation from "./Navigation";
+import BottomNav from "./BottomNav";
 import Footer from "./Footer";
 
+type Session = {
+  id: number;
+  expert: string;
+  role: string;
+  company: string;
+  category: string;
+  location: string;
+  date: string;
+  time: string;
+  price: string;
+  status: string;
+  meetLink: string;
+  rating: number;
+  reviews: number;
+  duration: string;
+  expertise: string[];
+  avatarColor: string;
+};
+
 const MySessions = () => {
-  const [sessions, setSessions] = useState([]);
-  const [filteredSessions, setFilteredSessions] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sessionsPerPage] = useState(6);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [sessionsPerPage] = useState<number>(6);
 
   // Dummy data with more sessions for pagination
   useEffect(() => {
@@ -200,7 +219,7 @@ const MySessions = () => {
   const currentSessions = filteredSessions.slice(indexOfFirstSession, indexOfLastSession);
   const totalPages = Math.ceil(filteredSessions.length / sessionsPerPage);
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const paginate = (pageNumber: SetStateAction<number>) => setCurrentPage(pageNumber);
 
   const nextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -212,7 +231,7 @@ const MySessions = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-blue-50/30 pb-20 lg:pb-0">
       <Navigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -254,7 +273,7 @@ const MySessions = () => {
       {/* Status Filter */}
       <div className="relative group flex-1 lg:flex-none">
         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
-          <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+          <div className="w-4 h-4 bg-linear-to-r from-blue-500 to-purple-500 rounded-full"></div>
         </div>
         <select
           value={statusFilter}
@@ -276,7 +295,7 @@ const MySessions = () => {
       {/* Category Filter */}
       <div className="relative group flex-1 lg:flex-none">
         <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
-          <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-blue-500 rounded-full"></div>
+          <div className="w-4 h-4 bg-linear-to-r from-green-500 to-blue-500 rounded-full"></div>
         </div>
         <select
           value={categoryFilter}
@@ -300,7 +319,7 @@ const MySessions = () => {
     </div>
 
     {/* Enhanced Results Count */}
-    <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-2xl border border-blue-100 shadow-sm">
+    <div className="flex items-center gap-3 bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-2xl border border-blue-100 shadow-sm">
       <div className="flex items-center gap-2">
         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
         <span className="text-sm font-semibold text-blue-700 whitespace-nowrap">
@@ -413,7 +432,7 @@ const MySessions = () => {
                 className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden group"
               >
                 {/* Header with Gradient */}
-                <div className={`bg-gradient-to-r ${session.avatarColor} p-6 text-white relative overflow-hidden`}>
+                <div className={`bg-linear-to-r ${session.avatarColor} p-6 text-white relative overflow-hidden`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-12 -translate-x-12"></div>
                   
@@ -477,7 +496,7 @@ const MySessions = () => {
                     {session.expertise.map((skill, index) => (
                       <span
                         key={index}
-                        className="px-2 py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs rounded-lg font-medium border border-gray-300/50"
+                        className="px-2 py-1 bg-linear-to-r from-gray-100 to-gray-200 text-gray-700 text-xs rounded-lg font-medium border border-gray-300/50"
                       >
                         {skill}
                       </span>
@@ -490,14 +509,14 @@ const MySessions = () => {
                     <div className="flex gap-2">
                       {session.status !== "Completed" && (
                         <a
-                          href={session.meetLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 transition-colors flex items-center gap-2 group-hover:scale-105 transform transition-transform"
-                        >
-                          <Video className="w-4 h-4" />
-                          Join
-                        </a>
+                            href={session.meetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 transition-all duration-200 transform group-hover:scale-105 flex items-center gap-2"
+                          >
+                            <Video className="w-4 h-4" />
+                            Join
+                          </a>
                       )}
                       <button className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-green-600" />

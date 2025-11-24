@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Star, MapPin, Clock, BookOpen, Users, Award, 
@@ -9,7 +9,7 @@ import {
 import Swal from "sweetalert2";
 
 
-import Navigation from "@/components/Navigation";
+import Navigation from "./Navigation";
 import Footer from "./Footer";
 
 const BookSessionPage = () => {
@@ -19,7 +19,7 @@ const BookSessionPage = () => {
   const { profile } = location.state || {};
   
   const [selectedDate, setSelectedDate] = useState(0);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState<{ time: string; available: boolean } | null>(null);
   const [showMobileBooking, setShowMobileBooking] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showProfile, setShowProfile] = useState(false);
@@ -95,13 +95,15 @@ const BookSessionPage = () => {
   // };
 
   // Category colors
-  const getCategoryColor = (section) => {
-    const colors = {
+  const getCategoryColor = (section: string | number) => {
+    const colors: Record<string, string> = {
       "IT": "text-blue-700 bg-blue-100",
       "HR": "text-purple-700 bg-purple-100", 
       "Business": "text-amber-700 bg-amber-100"
     };
-    return colors[section] || "text-gray-700 bg-gray-100";
+    return typeof section === "string" && section in colors
+      ? colors[section]
+      : "text-gray-700 bg-gray-100";
   };
 
   // Booking Banner Component
@@ -112,7 +114,7 @@ const BookSessionPage = () => {
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1551836022-4c4c79ecde51?auto=format&fit=crop&w=1200&q=80')" }}
       />
       
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 via-purple-900/70 to-indigo-900/80" />
+      <div className="absolute inset-0 bg-linear-to-r from-blue-900/80 via-purple-900/70 to-indigo-900/80" />
       
       <div className="relative z-10 px-6 py-8 md:px-12 md:py-12 text-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -122,7 +124,7 @@ const BookSessionPage = () => {
           </div>
           
           <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
-            Master Your Next <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">Interview</span>
+            Master Your Next <span className="bg-linear-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">Interview</span>
           </h1>
           
           <p className="text-lg md:text-xl text-gray-200 mb-6 max-w-2xl mx-auto leading-relaxed">
@@ -130,7 +132,7 @@ const BookSessionPage = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
+            <button className="px-8 py-3 bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
               Book Session Now
             </button>
@@ -273,7 +275,7 @@ const PromoBanner = () => (
   disabled={!selectedSlot}
   className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all mt-6 flex items-center justify-center gap-2 ${
     selectedSlot
-      ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl hover:scale-105"
+      ? "bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl hover:scale-105"
       : "bg-gray-300 cursor-not-allowed"
   }`}
 >
@@ -348,7 +350,7 @@ const PromoBanner = () => (
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-16 h-16 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
                   JD
                 </div>
                 <div>
@@ -386,7 +388,7 @@ const PromoBanner = () => (
 
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 pb-20 lg:pb-0">
       <Navigation />
       
       {/* Mobile Booking FAB */}
@@ -473,7 +475,7 @@ const PromoBanner = () => (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
   <div className="flex items-start gap-6">
     {/* Profile Image with Status */}
-    <div className="relative flex-shrink-0">
+    <div className="relative shrink-0">
       <div className="relative">
         <img
           src={profile.logo}
@@ -543,7 +545,7 @@ const PromoBanner = () => (
       <div>
         <h3 className="text-sm font-medium text-gray-900 mb-3">Expertise</h3>
         <div className="flex flex-wrap gap-2">
-          {profile.skills.map((skill, idx) => (
+          {profile.skills.map((skill: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined, idx: Key | null | undefined) => (
             <span
               key={idx}
               className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-default"
@@ -675,7 +677,7 @@ const PromoBanner = () => (
                           "Follow-up resources and preparation materials"
                         ].map((benefit, idx) => (
                           <div key={idx} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
                             <span className="text-gray-700">{benefit}</span>
                           </div>
                         ))}
@@ -721,7 +723,7 @@ const PromoBanner = () => (
                       {reviews.map(review => (
                         <div key={review.id} className="border-b border-gray-200 pb-6 last:border-0 last:pb-0">
                           <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                            <div className="w-12 h-12 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                               {review.name.charAt(0)}
                             </div>
                             <div className="flex-1">

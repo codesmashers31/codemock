@@ -1,6 +1,6 @@
 import { Home, User, Settings2 } from "lucide-react"; // or any React icons
 import React, { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "../components/Sidebar";
 
 const BottomNav = () => {
   const [showProfile, setShowProfile] = useState(false);

@@ -1,5 +1,5 @@
 import express from "express";
-import mongoose from "mongoose";
+
 import authRoutes from "./routes/authRoutes.js";
 import connectDB from "./config/db.js";
 import { configDotenv } from "dotenv";

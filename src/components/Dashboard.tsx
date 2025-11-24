@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "../components/ui/button";
+import { useAuth } from "../context/AuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();

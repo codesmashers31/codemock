@@ -88,7 +88,7 @@ export interface Expert {
   bio: string;
   rating: number; // 1-5
   totalInterviews: number;
-  status: 'active' | inactive';
+  status: 'active' | 'inactive';
   availability: 'available' | 'busy' | 'unavailable';
   hourlyRate: number;
   createdAt: string;
