@@ -1,34 +1,41 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { 
+  Star, Users, TrendingUp, Award, 
+  CheckCircle, ArrowRight, Sparkles, Target
+} from "lucide-react";
 
-const ChennaiInterviewHero = () => {
+export default function ModernHeroBanner() {
   const [currentText, setCurrentText] = useState(0);
   const [currentImage, setCurrentImage] = useState(0);
   const [bookingCount, setBookingCount] = useState(0);
 
-  // SEO Strong Content - Chennai focused
   const slidingTexts = [
-    "interview coach",
-    "IT career mentor", 
-    "placement prep partner",
-    "tech interview expert",
-    "HR round specialist",
-    "coding interview guide"
+    "Interview Coach",
+    "Career Mentor", 
+    "Placement Partner",
+    "Tech Expert",
+    "HR Specialist"
   ];
 
-  // Multiple images for rotation
   const images = [
-    "/media/img/6.jpg",
-    "/media/img/3.jpg", 
-    "/media/img/2.jpg",
-    "/media/img/1.jpg",
-  
+    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=500&h=600&fit=crop", 
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=500&h=600&fit=crop"
   ];
 
   const stats = [
-    { number: "2.5K+", label: "Students Placed" },
-    { number: "94%", label: "Success Rate" },
-    { number: "200+", label: "Chennai Companies" },
-    { number: "4.9★", label: "Student Rating" }
+    { icon: Users, number: "2.5K+", label: "Students Placed", color: "blue" },
+    { icon: TrendingUp, number: "94%", label: "Success Rate", color: "green" },
+    { icon: Award, number: "200+", label: "Companies", color: "purple" },
+    { icon: Star, number: "4.9", label: "Rating", color: "yellow" }
+  ];
+
+  const features = [
+    "Real HR interview practice",
+    "AI-powered feedback",
+    "Company-specific prep",
+    "24/7 availability"
   ];
 
   // Sliding text animation
@@ -64,182 +71,280 @@ const ChennaiInterviewHero = () => {
   }, []);
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-white to-blue-50 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Main Grid */}
-        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-center">
-          
-          {/* Left Side - Content */}
-          <div className="space-y-6 order-2 lg:order-1">
-            
-            {/* Main Heading with Sliding Text */}
-            <div className="space-y-4">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-blue-100 px-3 py-1.5 rounded-full">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-semibold text-blue-800">Trusted by Chennai Students</span>
-              </div>
-              
-              {/* Main Title */}
-              <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                  Meet your Life Changer here{" "}
-                  <div className="h-12 sm:h-14 lg:h-16 overflow-hidden mt-1">
-                    {slidingTexts.map((text, index) => (
-                      <div
-                        key={index}
-                        className={`transition-all duration-500 ${
-                          index === currentText ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 absolute"
-                        }`}
-                      >
-                        <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                          {text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </h1>
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
+      
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
 
-                {/* Subtitle */}
-                <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-md">
-                  Roleplay mock interviews with AI & real HRs. Master Chennai company patterns for Zoho, Infosys, TCS and more.
-                </p>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+        
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          
+          {/* Left Content */}
+          <div className="space-y-8">
+            
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-100">
+              <Sparkles className="w-4 h-4 text-yellow-500" />
+              <span className="text-sm font-semibold text-gray-700">Trusted by 3,000+ Students</span>
+              <div className="flex -space-x-1">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white"></div>
+                ))}
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <div className="text-lg sm:text-xl font-bold text-blue-800">{stat.number}</div>
-                  <div className="text-xs text-gray-600 mt-1">{stat.label}</div>
+            {/* Main Heading */}
+            <div className="space-y-4">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+                <span className="text-gray-900">Meet Your</span>
+                <br />
+                <div className="relative inline-block h-16 sm:h-20 overflow-hidden">
+                  {slidingTexts.map((text, index) => (
+                    <span
+                      key={index}
+                      className={`absolute left-0 transition-all duration-500 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent ${
+                        index === currentText ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                      }`}
+                    >
+                      {text}
+                    </span>
+                  ))}
+                </div>
+              </h1>
+
+              <p className="text-lg text-gray-600 leading-relaxed max-w-xl">
+                Master interviews with AI & real HRs. Practice for top companies like Zoho, Infosys, TCS and get placed faster.
+              </p>
+            </div>
+
+            {/* Features List */}
+            <div className="grid grid-cols-2 gap-3">
+              {features.map((feature, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-gray-700">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span className="text-sm font-medium">{feature}</span>
                 </div>
               ))}
             </div>
 
-            {/* CTA Section */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-md">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-center sm:text-left">
-                  <h3 className="font-bold text-gray-900 text-sm">Start Your Interview Prep</h3>
-                  <p className="text-gray-600 text-xs mt-1">Get placed in top Chennai companies</p>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                Start Free Mock Interview
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+              
+              <button className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-4 rounded-xl font-semibold text-base border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 flex items-center justify-center gap-2">
+                <Target className="w-5 h-5" />
+                Watch Demo
+              </button>
+            </div>
+
+            {/* Social Proof */}
+            <div className="flex flex-wrap items-center gap-6 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 border-2 border-white"></div>
+                  ))}
                 </div>
-                
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold text-xs transition-all duration-300 shadow-md hover:shadow-lg w-full sm:w-auto">
-                    Free Mock Interview
-                  </button>
-                  
-                  <div className="text-center">
-                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                      {bookingCount.toLocaleString()}+ booked
-                    </div>
-                    <div className="text-xs text-orange-600 font-semibold">20% OFF first session</div>
-                  </div>
+                <div className="text-sm">
+                  <div className="font-bold text-gray-900">{bookingCount.toLocaleString()}+</div>
+                  <div className="text-gray-600">Active Users</div>
+                </div>
+              </div>
+              
+              <div className="h-8 w-px bg-gray-300"></div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[1,2,3,4,5].map(i => (
+                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                  ))}
+                </div>
+                <div className="text-sm">
+                  <div className="font-bold text-gray-900">4.9/5</div>
+                  <div className="text-gray-600">Rating</div>
                 </div>
               </div>
             </div>
 
           </div>
 
-          {/* Right Side - Image */}
-          <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-            <div className="relative w-full max-w-xs sm:max-w-sm lg:max-w-md">
-              {/* Main Image with Transition */}
-              <div className="relative rounded-xl shadow-xl border-4 border-white overflow-hidden">
+          {/* Right Image */}
+          <div className="relative lg:block">
+            <div className="relative">
+              
+              {/* Main Image Container */}
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 {images.map((image, index) => (
                   <img
                     key={index}
                     src={image}
-                    alt="Chennai Interview Coach"
-                    className={`w-full h-56 sm:h-64 lg:h-72 object-cover transition-opacity duration-1000 ${
-                      index === currentImage ? "opacity-100" : "opacity-0 absolute top-0 left-0"
+                    alt="Interview Coach"
+                    className={`w-full h-[500px] object-cover transition-opacity duration-1000 ${
+                      index === currentImage ? "opacity-100" : "opacity-0 absolute inset-0"
                     }`}
                   />
                 ))}
+                
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
-              
-              {/* Floating Badges */}
-              <div className="absolute -top-2 -right-2 bg-white rounded-lg p-2 shadow-md border">
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-semibold text-gray-900">Live Coach</span>
+
+              {/* Floating Cards */}
+              <div className="absolute -top-6 -right-6 bg-white rounded-xl p-4 shadow-xl border border-gray-100 animate-float">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">94%</div>
+                    <div className="text-xs text-gray-600">Success Rate</div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="absolute -bottom-2 -left-2 bg-blue-600 text-white rounded-lg px-2.5 py-1 shadow-md">
-                <div className="text-xs font-semibold">Chennai Based</div>
+
+              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl p-4 shadow-xl border border-gray-100 animate-float animation-delay-2000">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">2.5K+</div>
+                    <div className="text-xs text-gray-600">Placed</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Floating Element - Success Rate */}
-              <div className="absolute -bottom-3 -right-3 bg-green-500 text-white rounded-lg px-3 py-1.5 shadow-lg">
-                <div className="text-xs font-bold">94% Success</div>
+              {/* Live Indicator */}
+              <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-semibold text-gray-900">Live Sessions</span>
               </div>
 
-              {/* Image Indicator Dots */}
-              <div className="flex justify-center gap-1.5 mt-3">
+              {/* Image Dots */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
                 {images.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImage(index)}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentImage ? 'bg-blue-600 w-4' : 'bg-gray-300'
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentImage ? 'w-8 bg-white' : 'w-2 bg-white/50'
                     }`}
                   />
                 ))}
               </div>
+
             </div>
           </div>
+
         </div>
 
-        {/* Bottom Section - Chennai Specific */}
-        <div className="mt-10 lg:mt-12 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 text-white relative overflow-hidden">
-          {/* Floating elements in background */}
-          <div className="absolute top-4 left-4 w-16 h-16 bg-white/10 rounded-full"></div>
-          <div className="absolute bottom-4 right-4 w-12 h-12 bg-white/10 rounded-full"></div>
+        {/* Stats Bar */}
+        <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {stats.map((stat, idx) => {
+            const Icon = stat.icon;
+            const colorClasses = {
+              blue: "bg-blue-50 text-blue-600",
+              green: "bg-green-50 text-green-600",
+              purple: "bg-purple-50 text-purple-600",
+              yellow: "bg-yellow-50 text-yellow-600"
+            };
+            
+            return (
+              <div key={idx} className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                <div className={`w-12 h-12 rounded-lg ${colorClasses[stat.color]} flex items-center justify-center mb-3`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stat.number}</div>
+                <div className="text-sm text-gray-600">{stat.label}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom CTA Banner */}
+        <div className="mt-16 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white relative overflow-hidden">
           
-          <div className="text-center max-w-3xl mx-auto relative z-10">
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3">Chennai's #1 Interview Preparation Platform</h2>
-            <p className="text-blue-100 text-sm mb-4 max-w-2xl mx-auto leading-relaxed">
-              Specifically designed for Chennai students and freshers. Get real interview questions from local companies and practice with AI that understands Chennai's job market.
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-white rounded-full translate-x-1/2 translate-y-1/2"></div>
+          </div>
+
+          <div className="relative text-center max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4">
+              Chennai's #1 Interview Prep Platform
+            </h2>
+            <p className="text-blue-100 text-lg mb-6">
+              Join thousands of successful candidates who landed their dream jobs
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-              <div className="text-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                <div className="text-xl font-bold">50+</div>
-                <div className="text-blue-200 text-xs mt-1">IT Companies in Chennai</div>
-              </div>
-              <div className="text-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                <div className="text-xl font-bold">500+</div>
-                <div className="text-blue-200 text-xs mt-1">Interview Questions</div>
-              </div>
-              <div className="text-center p-3 bg-white/10 rounded-lg backdrop-blur-sm">
-                <div className="text-xl font-bold">24/7</div>
-                <div className="text-blue-200 text-xs mt-1">AI Practice Available</div>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                Get Started - It's Free
+                <ArrowRight className="w-5 h-5" />
+              </button>
+              
+              <div className="flex items-center justify-center gap-2 text-white/90">
+                <CheckCircle className="w-5 h-5" />
+                <span className="font-medium">No credit card required</span>
               </div>
             </div>
 
-            {/* Floating CTA */}
-            <div className="mt-4 flex justify-center">
-              <button className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold text-xs transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
-                Join 3284+ Successful Students
-              </button>
+            <div className="mt-8 flex flex-wrap justify-center gap-8 text-sm">
+              <div>
+                <div className="text-2xl font-bold">50+</div>
+                <div className="text-blue-200">IT Companies</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold">500+</div>
+                <div className="text-blue-200">Questions</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold">24/7</div>
+                <div className="text-blue-200">AI Available</div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Additional Floating Elements */}
-        {/* <div className="fixed bottom-6 right-6 z-50">
-          <div className="bg-green-500 text-white p-3 rounded-full shadow-lg animate-bounce">
-            <div className="text-xs font-bold">🎯</div>
-          </div>
-        </div> */}
-
       </div>
-    </section>
-  );
-};
 
-export default ChennaiInterviewHero;
+      <style>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
