@@ -3,7 +3,7 @@ const PromoBanner = () => (
     {/* Left: Content */}
     <div className="flex flex-col justify-center flex-1 min-w-0 mr-6">
       <div className="flex items-center gap-2 mb-3">
-        <span className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-semibold">
+        <span className=" bg-gray-900 text-white text-xs px-3 py-1 rounded-full font-semibold">
           🚀 NEW
         </span>
         <span className="text-gray-500 text-xs">AI-Powered Interviews</span>
@@ -19,7 +19,7 @@ const PromoBanner = () => (
 
       <a
         href="#"
-        className="bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-lg text-white font-semibold text-sm shadow transition-all duration-300 w-fit"
+        className="bg-gray-900  hover:bg-blue-700 px-5 py-2.5 rounded-lg text-white font-semibold text-sm shadow transition-all duration-300 w-fit"
       >
         Try Now - Free
       </a>
@@ -33,7 +33,7 @@ const PromoBanner = () => (
           alt="AI Interview Assistant"
           className="h-28 w-28 md:h-32 md:w-32 object-cover rounded-xl border-2 border-white shadow-lg"
         />
-        <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+        <span className="absolute -top-2 -right-2 bg-gray-900  text-white text-xs px-2 py-1 rounded-full font-semibold">
           AI
         </span>
       </div>

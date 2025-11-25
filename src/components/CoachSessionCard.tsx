@@ -5,6 +5,9 @@ import {
   PenTool, BarChart3, DollarSign, Brain, Heart
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+
+
 // Types
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
 
@@ -781,6 +784,15 @@ const getCategoryIcon = (category: Category) => {
 // Profile Card Component
 const ProfileCard = ({ profile }: { profile: Profile }) => {
   const [liked, setLiked] = useState(false);
+   const navigate = useNavigate();
+
+     const handleBookNow = () => {
+    navigate(`/book-session/${profile.name}`, {
+      state: {
+        profile // Pass the full profile object; you can customize fields as needed
+      }
+    });
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 h-full flex flex-col">
@@ -874,7 +886,10 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
           <p className="text-xs text-gray-500">Session</p>
           <p className="text-base font-bold text-gray-900">{profile.price}</p>
         </div>
-        <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors">
+         <button
+          className="px-3 py-1.5 bg-gray-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+          onClick={handleBookNow}
+        >
           Book Now
         </button>
       </div>

@@ -9,6 +9,7 @@ import Index from "./pages/Index";   // ✅ use Index as the real Dashboard
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MySessions from "./components/MySessions";
+import PaymentPage from "./components/PaymentPage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,15 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+
+          <Route
+              path="/payment"
+              element={
+                <ProtectedRoute>
+                  <PaymentPage />
+                </ProtectedRoute>
+              }
+            />
 
           <Route
             path="/dashboard"

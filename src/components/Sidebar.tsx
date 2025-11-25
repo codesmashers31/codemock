@@ -17,14 +17,14 @@ const Sidebar = () => {
   const [showAiSuggestions, setShowAiSuggestions] = useState(false);
 
   return (
-    <div className="min-h-screen  p-8">
+    <div className="min-h-screen">
       <div className="max-w-xs mx-auto">
         
         {/* White Card */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-100">
           
           {/* Top section with pattern */}
-          <div className="bg-linear-to-br from-blue-500 to-indigo-600 p-8 text-center relative">
+          <div className="bg-linear-to-br bg-gray-900 p-8 text-center relative">
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full blur-3xl"></div>
             </div>
@@ -53,8 +53,8 @@ const Sidebar = () => {
             
             {/* Role and Org */}
             <div className="text-center">
-              <p className="text-blue-600 font-semibold text-sm">{profile.role}</p>
-              <p className="text-gray-500 text-xs mt-1">{profile.org}</p>
+              <p className="text-gray-900 font-semibold text-sm">{profile.role}</p>
+              <p className="text-gray-600 text-xs mt-1">{profile.org}</p>
             </div>
 
             {/* Divider */}
@@ -63,12 +63,12 @@ const Sidebar = () => {
             {/* Profile Completion */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-700 text-sm font-medium">Profile Updated</span>
-                <span className="text-blue-600 font-bold text-sm">{profile.profileCompletion}%</span>
+                <span className="text-gray-900 text-sm font-medium">Profile Updated</span>
+                <span className="text-gray-600 font-bold text-sm">{profile.profileCompletion}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-linear-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
+                  className="bg-linear-to-r bg-gray-900 h-full rounded-full transition-all duration-500"
                   style={{ width: `${profile.profileCompletion}%` }}
                 ></div>
               </div>
@@ -107,7 +107,7 @@ const Sidebar = () => {
             {/* AI Edit Button */}
             <button
               onClick={() => setShowAiSuggestions(!showAiSuggestions)}
-              className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3 rounded-lg transition font-medium"
+              className="w-full flex items-center justify-center gap-2 bg-linear-to-r bg-gray-700 hover:from-blue-600 hover:to-indigo-700 text-white py-3 rounded-lg transition font-medium"
             >
               <Sparkles size={18} />
               <span>AI Edit Profile</span>
@@ -131,20 +131,20 @@ const Sidebar = () => {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Zap size={16} className="text-blue-600 mt-1 shrink-0" />
+                  <Zap size={16} className="text-gray-600 mt-1 shrink-0" />
                   <div className="text-sm">
                     <p className="text-gray-800 font-medium">Write Bio Summary</p>
                     <p className="text-gray-600 text-xs mt-1">Complete your profile</p>
                   </div>
                 </div>
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition text-sm font-medium mt-3">
+                <button className="w-full bg-gray-600 hover:bg-blue-700 text-white py-2 rounded-lg transition text-sm font-medium mt-3">
                   Apply AI Suggestions
                 </button>
               </div>
             )}
 
             {/* Edit Profile button */}
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-medium flex items-center justify-center gap-2">
+            <button className="w-full bg-gray-600 hover:bg-blue-700 text-white py-3 rounded-lg transition font-medium flex items-center justify-center gap-2">
               <Edit3 size={18} />
               Edit Profile
             </button>
