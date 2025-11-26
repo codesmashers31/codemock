@@ -7,13 +7,20 @@ import Register from "./components/Register";
 import BookSessionPage from "./components/BookSessionPage";
 import Index from "./pages/Index";   // ✅ use Index as the real Dashboard
 import { ProtectedRoute } from "./routes/ProtectedRoute";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import MySessions from "./components/MySessions";
 import PaymentPage from "./components/PaymentPage";
+import ExpertDashboard from "./pages/ExpertDashboard";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+const {user} = useAuth();
+
+
+  return (
+
+    <>
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <Toaster />
@@ -47,10 +54,14 @@ const App = () => (
 
           <Route
             path="/dashboard"
-            element={
+            element={ user?.userType === "expert"?
+              <ProtectedRoute>
+                <ExpertDashboard/>
+              </ProtectedRoute> :
               <ProtectedRoute>
                 <Index />   {/* ✅ now this is your dashboard */}
               </ProtectedRoute>
+              
             }
           />
 
@@ -69,6 +80,10 @@ const App = () => (
       </BrowserRouter>
     </AuthProvider>
   </QueryClientProvider>
-);
+
+  </>
+  )
+  
+};
 
 export default App;
