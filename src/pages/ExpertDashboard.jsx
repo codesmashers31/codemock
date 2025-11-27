@@ -8,6 +8,7 @@ import ExpertAvailability from "../components/ExpertAvailability";
 import ExpertTodaySessions from "../components/ExpertTodaySessions";
 import ExpertVerification from "../components/ExpertVerification";
 import ExpertProfileHeader from "../components/ExpertProfileHeader";
+import Layout from "../components/Layout";
 
 /* ----------------- Professional UI Primitives ----------------- */
 export function Card({ children, className = "" }) {
@@ -195,44 +196,33 @@ export function MultiSelect({
 
 
 export default function ExpertDashboard() {
-
-
-
   return (
-    <>
-
-
+    <Layout active="dashboard">
       <div className="p-6 bg-gray-100 min-h-screen">
 
         <ExpertStats />
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT: 1/3 */}
+          
+          {/* LEFT SIDE */}
           <div className="lg:col-span-1 space-y-6">
             <ExpertProfileHeader />
-
             <PersonalInfo />
-
             <ExpertEducation />
-
             <ExpertProfession />
-
             <ExpertVerification />
           </div>
 
-          {/* RIGHT: 2/3 */}
+          {/* RIGHT SIDE */}
           <div className="lg:col-span-2 space-y-6">
-
             <ExpertTodaySessions />
-
             <ExpertAvailability />
-
             <SkillsAndExpertise />
-
           </div>
+
         </div>
       </div>
-    </>
+    </Layout>
   );
 }
 

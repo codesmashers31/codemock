@@ -1,3 +1,4 @@
+// src/components/RegisterForm.tsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -122,7 +123,13 @@ export const RegisterForm = () => {
         formData.name.trim()
       );
       setIsLoading(false);
-      navigate("/dashboard");
+      // after register we go to dashboard if expert, or to landing - your register currently navigates to /dashboard
+      // If you want role-based redirect here too, adjust based on formData.userType
+      if (formData.userType === "expert") {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err: unknown) {
       setIsLoading(false);
       if (err instanceof Error) {
@@ -183,13 +190,13 @@ export const RegisterForm = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             Already Registered?{" "}
             <Link
-              to="/login"
+              to="/signin"
               className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
             >
               Login here
@@ -198,10 +205,10 @@ export const RegisterForm = () => {
         </div>
         <Card className="w-full shadow-lg border-none bg-white">
           <CardHeader className="text-center space-y-1 pb-4">
-            <CardTitle className="text-xl font-bold text-gray-900">
+            <CardTitle className="text-xl font-bold text-slate-900">
               {step === "email" ? "Create your account" : step === "otp" ? "Verify your email" : "Complete your profile"}
             </CardTitle>
-            <CardDescription className="text-gray-500 text-sm">
+            <CardDescription className="text-slate-500 text-sm">
               {step === "email"
                 ? "Join thousands of professionals"
                 : step === "otp"
@@ -211,7 +218,7 @@ export const RegisterForm = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
-              <div className="bg-red-100 border border-red-200 text-red-700 text-sm p-3 rounded-lg text-center">
+              <div className="bg-red-100 border border-slate-200 text-red-700 text-sm p-3 rounded-lg text-center">
                 {error}
               </div>
             )}
@@ -219,7 +226,7 @@ export const RegisterForm = () => {
             {step === "email" ? (
               <form onSubmit={handleEmailSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="email" className="text-sm font-medium text-slate-700">
                     Email
                   </Label>
                   <Input
@@ -231,12 +238,12 @@ export const RegisterForm = () => {
                     className="w-full h-10"
                     required
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-slate-500">
                     We'll send a verification code to this email
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="userType" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="userType" className="text-sm font-medium text-slate-700">
                     I am a
                   </Label>
                   <Select
@@ -251,7 +258,7 @@ export const RegisterForm = () => {
                       control: base => ({
                         ...base,
                         minHeight: "2.5rem",
-                        borderColor: "#CBD5E1", // Tailwind border-gray-300
+                        borderColor: "#CBD5E1", // Tailwind slate-200 matches this hex well
                         boxShadow: "none",
                         fontSize: "1rem",
                       }),
@@ -265,7 +272,7 @@ export const RegisterForm = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded"
+                  className="w-full h-10 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded"
                   disabled={isLoading}
                 >
                   {isLoading ? "Sending code..." : "Send Verification Code"}
@@ -274,7 +281,7 @@ export const RegisterForm = () => {
             ) : step === "otp" ? (
               <form onSubmit={handleOtpSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="otp" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="otp" className="text-sm font-medium text-slate-700">
                     Verification Code
                   </Label>
                   <Input
@@ -287,14 +294,14 @@ export const RegisterForm = () => {
                     required
                   />
                   <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-slate-500">
                       Didn't receive the code?
                     </p>
                     <button
                       type="button"
                       onClick={resendOtp}
                       disabled={countdown > 0 || isLoading}
-                      className="text-xs text-blue-600 hover:text-blue-700 hover:underline disabled:text-gray-400 disabled:cursor-not-allowed"
+                      className="text-xs text-gray-600 hover:text-gray-700 hover:underline disabled:text-slate-400 disabled:cursor-not-allowed"
                     >
                       {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
                     </button>
@@ -302,7 +309,7 @@ export const RegisterForm = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded"
+                  className="w-full h-10 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded"
                   disabled={isLoading || formData.otp.length !== 6}
                 >
                   {isLoading ? "Verifying..." : "Verify Email"}
@@ -314,7 +321,7 @@ export const RegisterForm = () => {
                       setStep("email");
                       setError("");
                     }}
-                    className="text-sm text-gray-600 hover:text-gray-800"
+                    className="text-sm text-slate-600 hover:text-slate-800"
                   >
                     ← Change email address
                   </button>
@@ -323,7 +330,7 @@ export const RegisterForm = () => {
             ) : (
               <form onSubmit={handleDetailsSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="name" className="text-sm font-medium text-slate-700">
                     Full Name
                   </Label>
                   <Input
@@ -337,7 +344,7 @@ export const RegisterForm = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="password" className="text-sm font-medium text-slate-700">
                     Password
                   </Label>
                   <Input
@@ -349,12 +356,12 @@ export const RegisterForm = () => {
                     className="w-full h-10"
                     required
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-slate-500">
                     Must be at least 6 characters long
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
                     Confirm Password
                   </Label>
                   <Input
@@ -369,7 +376,7 @@ export const RegisterForm = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded"
+                  className="w-full h-10 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded"
                   disabled={isLoading}
                 >
                   {isLoading ? "Creating account..." : "Create Account"}
@@ -380,7 +387,7 @@ export const RegisterForm = () => {
             <div className="text-center space-y-3">
               <Button
                 variant="outline"
-                className="w-full h-10 rounded border-gray-300"
+                className="w-full h-10 rounded border-slate-300"
               >
                 <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                   <path
