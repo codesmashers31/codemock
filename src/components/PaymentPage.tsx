@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 interface CardDetails {
   number: string;
@@ -41,10 +42,10 @@ const PaymentPage: React.FC = () => {
   const orderSummary = {
     productName: "Premium Subscription",
     plan: "Annual Plan",
-    basePrice: 300,
-    discount: appliedDiscount ? 75 : 50, // Increased discount if code applied
-    gst: 27,
-    total: appliedDiscount ? 252 : 277,
+    basePrice: 3000,
+    discount: appliedDiscount ? 750 : 500,
+    gst: 270,
+    total: appliedDiscount ? 2520 : 2770,
   };
 
   // Validation functions
@@ -178,7 +179,7 @@ const PaymentPage: React.FC = () => {
           title: "Payment Successful 🎉",
           text: "Your session has been booked successfully!",
           icon: "success",
-          confirmButtonColor: "#2563eb",
+          confirmButtonColor: "#374151",
         }).then(() => {
           // Navigate to previous page when OK is pressed
           navigate('/my-sessions');
@@ -261,14 +262,26 @@ const PaymentPage: React.FC = () => {
     setCardDetails({ ...cardDetails, expiry: value });
   };
 
+  const handleBackClick = () => {
+    navigate(-1); // Go back to previous page
+  };
+
   const popularBanks = ["SBI", "HDFC", "ICICI", "Axis", "Kotak", "PNB"];
   const walletOptions = ["Paytm", "PhonePe", "AmazonPay", "MobiKwik"];
 
   return (
-    <div className="min-h-screen bg-gray-200 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <header className="text-center mb-8">
+        {/* Header with Back Button */}
+        <header className="text-center mb-8 relative">
+          <button
+            onClick={handleBackClick}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 bg-white/80 hover:bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm"
+          >
+            <ArrowLeft size={20} />
+            <span className="font-medium">Back</span>
+          </button>
+          
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Complete Your Payment
           </h1>
@@ -419,14 +432,18 @@ const PaymentPage: React.FC = () => {
                     onClick={() => setActivePaymentMethod(method.id)}
                     className={`p-3 border-2 rounded-xl transition-all duration-200 flex flex-col items-center justify-center ${
                       activePaymentMethod === method.id
-                        ? "border-blue-500 bg-blue-50"
+                        ? "border-gray-600 bg-gray-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="text-gray-700 mb-1 flex justify-center">
+                    <div className={`mb-1 flex justify-center ${
+                      activePaymentMethod === method.id ? "text-gray-900" : "text-gray-600"
+                    }`}>
                       {method.icon}
                     </div>
-                    <span className="text-sm font-medium text-gray-700 text-center">
+                    <span className={`text-sm font-medium text-center ${
+                      activePaymentMethod === method.id ? "text-gray-900" : "text-gray-700"
+                    }`}>
                       {method.label}
                     </span>
                   </button>
@@ -446,7 +463,7 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="1234 5678 9012 3456"
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                         errors.cardNumber ? "border-red-300" : "border-gray-300"
                       }`}
                       value={cardDetails.number}
@@ -468,7 +485,7 @@ const PaymentPage: React.FC = () => {
                       <input
                         type="text"
                         placeholder="MM/YY"
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                           errors.expiry ? "border-red-300" : "border-gray-300"
                         }`}
                         value={cardDetails.expiry}
@@ -488,7 +505,7 @@ const PaymentPage: React.FC = () => {
                       <input
                         type="text"
                         placeholder="123"
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                           errors.cvv ? "border-red-300" : "border-gray-300"
                         }`}
                         value={cardDetails.cvv}
@@ -515,7 +532,7 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="John Doe"
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                         errors.holderName ? "border-red-300" : "border-gray-300"
                       }`}
                       value={cardDetails.holderName}
@@ -537,7 +554,7 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="checkbox"
                       id="saveCard"
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-gray-500"
                     />
                     <label
                       htmlFor="saveCard"
@@ -559,7 +576,7 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="yourname@upi"
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                         errors.upiId ? "border-red-300" : "border-gray-300"
                       }`}
                       value={upiId}
@@ -577,7 +594,7 @@ const PaymentPage: React.FC = () => {
                       <button
                         key={app}
                         type="button"
-                        className="p-3 border-2 border-gray-200 rounded-xl hover:border-blue-500 transition-all flex flex-col items-center justify-center"
+                        className="p-3 border-2 border-gray-200 rounded-xl hover:border-gray-400 transition-all flex flex-col items-center justify-center"
                       >
                         <div className="text-gray-700 mb-1 flex justify-center">
                           <svg
@@ -611,7 +628,7 @@ const PaymentPage: React.FC = () => {
                       Select Bank
                     </label>
                     <select
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                         errors.bank ? "border-red-300" : "border-gray-300"
                       }`}
                       value={selectedBank}
@@ -637,7 +654,7 @@ const PaymentPage: React.FC = () => {
                         onClick={() => setSelectedBank(bank)}
                         className={`p-3 border-2 rounded-xl transition-all flex items-center justify-center ${
                           selectedBank === bank
-                            ? "border-blue-500 bg-blue-50"
+                            ? "border-gray-600 bg-gray-50"
                             : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
@@ -661,11 +678,13 @@ const PaymentPage: React.FC = () => {
                         onClick={() => setSelectedWallet(wallet)}
                         className={`p-4 border-2 rounded-xl transition-all flex flex-col items-center justify-center ${
                           selectedWallet === wallet
-                            ? "border-blue-500 bg-blue-50"
+                            ? "border-gray-600 bg-gray-50"
                             : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
-                        <div className="text-gray-700 mb-2 flex justify-center">
+                        <div className={`mb-2 flex justify-center ${
+                          selectedWallet === wallet ? "text-gray-900" : "text-gray-600"
+                        }`}>
                           <svg
                             className="w-6 h-6"
                             fill="none"
@@ -680,7 +699,9 @@ const PaymentPage: React.FC = () => {
                             />
                           </svg>
                         </div>
-                        <span className="text-sm font-medium text-gray-700 text-center">
+                        <span className={`text-sm font-medium text-center ${
+                          selectedWallet === wallet ? "text-gray-900" : "text-gray-700"
+                        }`}>
                           {wallet}
                         </span>
                       </button>
@@ -701,7 +722,7 @@ const PaymentPage: React.FC = () => {
                   <input
                     type="text"
                     placeholder="Enter discount code"
-                    className={`flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+                    className={`flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
                       errors.discount ? "border-red-300" : "border-gray-300"
                     }`}
                     value={discountCode}
@@ -733,7 +754,7 @@ const PaymentPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-white py-4 px-6 rounded-xl font-semibold hover:from-gray-800 hover:to-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <div className="flex items-center justify-center">
@@ -741,7 +762,7 @@ const PaymentPage: React.FC = () => {
                     Processing...
                   </div>
                 ) : (
-                  `Pay $${orderSummary.total}`
+                  `Pay ₹${orderSummary.total}`
                 )}
               </button>
             </form>
@@ -793,11 +814,11 @@ const PaymentPage: React.FC = () => {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Base Price</span>
-                  <span>${orderSummary.basePrice}</span>
+                  <span>₹{orderSummary.basePrice}</span>
                 </div>
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
-                  <span>-${orderSummary.discount}</span>
+                  <span>-₹{orderSummary.discount}</span>
                   {appliedDiscount && (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-2">
                       Extra
@@ -806,25 +827,25 @@ const PaymentPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>GST</span>
-                  <span>${orderSummary.gst}</span>
+                  <span>₹{orderSummary.gst}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-gray-900 pt-3 border-t border-gray-200">
                   <span>Total Payable</span>
-                  <span>${orderSummary.total}</span>
+                  <span>₹{orderSummary.total}</span>
                 </div>
               </div>
 
               {/* Download Invoice */}
-              <button className="w-full border border-blue-600 text-blue-600 py-3 px-4 rounded-xl hover:bg-blue-50 transition-colors font-medium mb-4">
+              <button className="w-full border border-gray-600 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 transition-colors font-medium mb-4">
                 Download Proforma Invoice
               </button>
 
               {/* Support Info */}
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg
-                      className="w-4 h-4 text-blue-600"
+                      className="w-4 h-4 text-gray-600"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

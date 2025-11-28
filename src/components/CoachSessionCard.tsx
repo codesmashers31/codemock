@@ -887,7 +887,7 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
           <p className="text-base font-bold text-gray-900">{profile.price}</p>
         </div>
          <button
-          className="px-3 py-1.5 bg-gray-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+          className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded transition-colors"
           onClick={handleBookNow}
         >
           Book Now

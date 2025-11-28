@@ -18,6 +18,7 @@ import ProfilePage from "./pages/expert/Profile";
 import SessionsPage from "./pages/expert/Sessions";
 import AvailabilityPage from "./pages/expert/Availability";
 import SkillsPage from "./pages/expert/Skills";
+import ScrollToTop from "./ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,8 @@ function AppRoutes() {
 
   return (
     <BrowserRouter>
+      {/* ScrollToTop must be inside BrowserRouter but outside Routes */}
+      <ScrollToTop />
       <Routes>
         {/* root will redirect experts to /dashboard */}
         <Route path="/" element={<LandingOrRedirect />} />

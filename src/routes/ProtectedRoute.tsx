@@ -1,13 +1,10 @@
+// src/routes/ProtectedRoute.tsx
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -15,6 +12,6 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       </div>
     );
   }
-  
-  return user ? <>{children}</> : <Navigate to="/signin" />;
+
+  return user ? <>{children}</> : <Navigate to="/signin" replace />;
 };
