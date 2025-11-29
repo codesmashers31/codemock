@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
+import { useAuth } from '../context/AuthContext';
 
 const PersonalInfo = () => {
-    const user = '69255389e1a38f2afd8f663d';
 
+    const { user } = useAuth();
+      //console.log(user._id);
+    const user_id = user._id
+   //console.log('th',user_id);
+   
     const initialProfile = {
         personal: {
             name: "",
@@ -26,8 +31,8 @@ const PersonalInfo = () => {
     useEffect(() => {
         const fetchPersonalInfo = async () => {
             try {
-                const response = await axios.get(`http://localhost:3000/api/auth/personalinfo`, {
-                    headers: { userid: user }
+                const response = await axios.get(`http://localhost:3000/api/expert/personalinfo`, {
+                    headers: { userid: user_id }
                 });
 
                 if (response.data.success && response.data.data) {
@@ -60,7 +65,7 @@ const PersonalInfo = () => {
     const savePersonal = async () => {
         try {
             const response = await axios.put(
-                `http://localhost:3000/api/auth/personalinfo`,
+                `http://localhost:3000/api/expert/personalinfo`,
                 {
                     userName: profile.personal.name,
                     mobile: profile.personal.phone,

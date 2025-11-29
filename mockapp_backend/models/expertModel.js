@@ -1,3 +1,4 @@
+// models/ExpertDetails.js
 import mongoose from "mongoose";
 
 /* ----------------- Education Schema ------------------ */
@@ -125,12 +126,11 @@ const expertSchema = new mongoose.Schema(
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",
+      ref: "User",   // <-- IMPORTANT: matches model name "User"
       required: true
     }
   },
   { timestamps: true }
 );
 
-export default mongoose.model("ExpertDetails", expertSchema)
-
+export default mongoose.model("ExpertDetails", expertSchema);

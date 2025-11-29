@@ -1,5 +1,7 @@
+// src/components/ExpertProfileHeader.jsx
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 import { Card, SecondaryButton } from "../pages/ExpertDashboard";
 
 function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
@@ -9,7 +11,7 @@ function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
 
   return (
     <div style={{ width: size, height: size }} className="relative">
-      <svg width={size} height={size} className="block">
+      <svg width={size} height={size}>
         <defs>
           <linearGradient id="prg" x1="0" x2="1">
             <stop offset="0%" stopColor="#3b82f6" />
@@ -17,14 +19,7 @@ function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
           </linearGradient>
         </defs>
 
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="#f1f5f9"
-          strokeWidth={stroke}
-          fill="transparent"
-        />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#f1f5f9" strokeWidth={stroke} fill="transparent" />
 
         <circle
           cx={size / 2}
@@ -32,9 +27,9 @@ function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
           r={radius}
           stroke="url(#prg)"
           strokeWidth={stroke}
-          strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
+          strokeLinecap="round"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           fill="transparent"
           className="transition-all duration-500 ease-out"
@@ -52,130 +47,159 @@ function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
       >
         {children}
       </div>
-
-      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-medium text-gray-600">
-        {percent}% complete
-      </div>
     </div>
   );
 }
 
 const ExpertProfileHeader = () => {
-  const user = "69255389e1a38f2afd8f663d"; // Replace with dynamic userId
 
-  const [profile, setProfile] = useState({
-    personal: {
-      name: "",
-      photoUrl: "",
-    },
-    professional: {
-      title: "",
-      company: "",
-    },
-  });
+  
+      const { user } = useAuth();
+        //console.log(user._id);
+      const user_id = user._id
+  
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const photoInputRef = useRef(null);
 
+  const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "" });
   const [completion, setCompletion] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const photoInputRef = useRef();
+  const fallbackName = user?.name || "";
 
-  // FETCH PROFILE
-const fetchProfile = async () => {
-  try {
-    const res = await axios.get("http://localhost:3000/api/auth/profile", {
-      headers: {
-        userid: user,  
-      },
-    });
+  const fetchProfile = async () => {
+    setLoading(true);
+    setError(null);
 
-    if (res.data.success) {
-      setProfile({
-        personal: {
-          name: res.data.profile.name,
-          photoUrl: res.data.profile.photoUrl,
-        },
-        professional: {
-          title: res.data.profile.title,
-          company: res.data.profile.company,
-        },
+    if (!token) {
+      setError("No token found. Please login.");
+      setProfile(prev => ({ ...prev, name: fallbackName }));
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await axios.get("/api/expert/profile", {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      setCompletion(res.data.completion);
-    }
-  } catch (err) {
-    console.error("Error fetching profile:", err);
-  }
-};
+      console.log("GET /api/expert/profile =>", res?.data);
 
+      if (res.data?.success) {
+        const p = res.data.profile || {};
+        setProfile({
+          name: p.name || fallbackName,
+          title: p.title || "",
+          company: p.company || "",
+          photoUrl: p.photoUrl || ""
+        });
+        setCompletion(typeof res.data.completion === "number" ? res.data.completion : 0);
+      } else {
+        setError(res.data?.message || "Failed to fetch profile");
+        setProfile(prev => ({ ...prev, name: fallbackName }));
+      }
+    } catch (err) {
+      console.error("fetchProfile error:", err);
+      const msg = err?.response?.data?.message || err.message || "Error fetching profile";
+      setError(msg);
+      setProfile(prev => ({ ...prev, name: fallbackName }));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user]);
 
-  const handlePhoto = (file) => {
+  const handlePhotoUpload = async (file) => {
     if (!file) return;
-    console.log("Upload photo API will go here");
+    if (!token) {
+      setError("No token found. Please login.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+
+      const res = await axios.post("/api/expert/profile/photo", fd, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
+      });
+
+      console.log("POST /api/expert/profile/photo =>", res?.data);
+
+      if (res.data?.success) {
+        const p = res.data.profile || {};
+        setProfile(prev => ({
+          ...prev,
+          name: p.name || prev.name,
+          title: p.title || prev.title,
+          company: p.company || prev.company,
+          photoUrl: p.photoUrl || prev.photoUrl
+        }));
+        setCompletion(typeof res.data.completion === "number" ? res.data.completion : completion);
+      } else {
+        setError(res.data?.message || "Upload failed");
+      }
+    } catch (err) {
+      console.error("handlePhotoUpload error:", err);
+      const msg = err?.response?.data?.message || err.message || "Upload failed";
+      setError(msg);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
-    <>
-      <Card className="text-center">
-        <div className="flex flex-col items-center">
-          <ProgressRing percent={completion} size={120} stroke={8}>
-            {profile.personal?.photoUrl ? (
-              <img
-                src={profile.personal.photoUrl}
-                alt="profile"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-full">
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                </svg>
-              </div>
-            )}
-          </ProgressRing>
-
-          <div className="mt-6 text-center">
-            <div className="text-xl font-semibold text-gray-900">
-              {profile.personal?.name || "Your Name"}
+    <Card className="text-center relative">
+      <div className="flex flex-col items-center">
+        <ProgressRing percent={completion} size={120} stroke={8}>
+          {profile.photoUrl ? (
+            <img src={profile.photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
+          ) : (
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-full">
+              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </div>
+          )}
+        </ProgressRing>
 
-            <div className="text-lg font-medium text-blue-600 mt-1">
-              {profile.professional?.title || "Your Title"}
-            </div>
-
-            <div className="text-sm text-gray-500 mt-1">
-              {profile.professional?.company || "Company"}
-            </div>
-          </div>
-
-          <div className="mt-6 w-full">
-            <input
-              ref={photoInputRef}
-              type="file"
-              className="hidden"
-              accept="image/*"
-              onChange={(e) => handlePhoto(e.target.files?.[0])}
-            />
-            <SecondaryButton
-              onClick={() => photoInputRef.current?.click()}
-              className="w-full"
-            >
-              Change Photo
-            </SecondaryButton>
-          </div>
-
-          <div className="mt-6 text-sm font-medium text-gray-700">
-            {completion}% complete
-          </div>
-
-          <div className="mt-4 text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-100">
-            To begin scheduling and receiving mock interviews, please complete your profile.
-          </div>
+        <div className="mt-4 text-xl font-semibold text-gray-900">
+          {profile.name || fallbackName || "Your Name"}
         </div>
-      </Card>
-    </>
+
+        <div className="text-lg text-blue-600 mt-1">
+          {profile.title || "Your Title"}
+        </div>
+
+        <div className="text-sm text-gray-500 mt-1">
+          {profile.company || "Company"}
+        </div>
+
+        <div className="mt-6 w-full">
+          <input ref={photoInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e.target.files[0])} />
+          <SecondaryButton onClick={() => photoInputRef.current?.click()} disabled={uploading || loading} className="w-full">
+            {uploading ? "Uploading..." : "Change Photo"}
+          </SecondaryButton>
+        </div>
+
+        <div className="mt-5 text-sm font-medium text-gray-700">{completion}% complete</div>
+
+        {error && (
+          <div className="mt-3 text-xs text-red-600 flex flex-col items-center">
+            <div>{error}</div>
+            <button className="mt-2 text-sm underline text-blue-600" onClick={() => fetchProfile()} disabled={loading}>Retry</button>
+          </div>
+        )}
+
+        {loading && <div className="mt-3 text-xs text-gray-500">Loading profile...</div>}
+      </div>
+    </Card>
   );
 };
 

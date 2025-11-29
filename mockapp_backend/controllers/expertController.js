@@ -1,26 +1,65 @@
 import ExpertDetails from '../models/expertModel.js'
+// controllers/expertController.js (add below getExpertProfile)
+import path from "path";
+import fs from "fs";
+
+// if you already have multer config, use that instead
+import multer from "multer";
+import { log } from 'console';
 
 // ----------------- profile completion -----------------
-export const getExpertProfile = async (req, res) => {
+// Controller file (where getExpertProfile lives)
+ // adjust import path as needed
+
+// Simple local storage multer (modify for S3 or cloud storage in production)
+const uploadDir = path.join(process.cwd(), "uploads", "profileImages");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || ".jpg";
+    const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, name);
+  },
+});
+export const uploadMiddleware = multer({ storage });
+
+// Controller to handle photo upload
+export const uploadProfilePhoto = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-
+    const userId = req.headers.userid || req.header("userid");
     if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID missing in headers" });
+      return res.status(400).json({ success: false, message: "User ID missing in headers (send header 'userid')" });
     }
 
-    const expert = await ExpertDetails.findOnex({userId: userId});
+    // multer should have put file on req.file
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded. Field name must be 'photo'." });
+    }
 
+    // Build a URL or path for the saved image. Adjust if using CDN/S3.
+    // Example: /uploads/profileImages/<filename>
+    const photoUrl = `/uploads/profileImages/${req.file.filename}`;
+
+    // Find expert
+    const expert = await ExpertDetails.findOne({ userId });
     if (!expert) {
-      return res.status(404).json({ success: false, message: "Expert not found" });
+      // If you want to allow creating a new ExpertDetails, you'd need to supply required personalInformation fields.
+      return res.status(404).json({
+        success: false,
+        message: "Expert profile not found. Please create/complete Personal Information before uploading a photo.",
+      });
     }
 
-    // -------------------------------------------------
-    // 🔥 CALCULATE PROFILE COMPLETION HERE ITSELF
-    // -------------------------------------------------
-    let score = 0;
+    // Update profileImage
+    expert.profileImage = photoUrl;
+    await expert.save();
 
-    // ---- Personal Info (25%) ----
+    // Recalculate completion (reuse logic from getExpertProfile)
+    let score = 0;
     const p = expert.personalInformation || {};
     const personalFilled =
       p.userName &&
@@ -32,48 +71,24 @@ export const getExpertProfile = async (req, res) => {
       p.city;
 
     if (personalFilled) score += 25;
-
-    // ---- Education (15%) ----
-    if (expert.education && expert.education.length > 0) score += 15;
-
-    // ---- Professional (20%) ----
+    if (Array.isArray(expert.education) && expert.education.length > 0) score += 15;
     const pd = expert.professionalDetails || {};
     const proFilled =
       pd.title &&
       pd.company &&
       pd.industry &&
-      pd.totalExperience >= 0;
-
+      typeof pd.totalExperience === "number";
     if (proFilled) score += 20;
-
-    // ---- Skills (15%) ----
     const sk = expert.skillsAndExpertise || {};
-    if ((sk.domains?.length || sk.tools?.length || sk.languages?.length))
-      score += 15;
-
-    // ---- Availability (15%) ----
+    if ((sk.domains?.length || sk.tools?.length || sk.languages?.length)) score += 15;
     const av = expert.availability || {};
-    const availabilityFilled =
-      av.sessionDuration &&
-      av.maxPerDay &&
-      (
-        (av.weekly && Object.values(av.weekly).some(arr => arr.length > 0)) ||
-        (av.breakDates && av.breakDates.length > 0)
-      );
-
+    const weeklyHasSlots =
+      av.weekly && Object.values(av.weekly || {}).some((arr) => Array.isArray(arr) && arr.length > 0);
+    const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
     if (availabilityFilled) score += 15;
-
-    // ---- Profile Image (10%) ----
     if (expert.profileImage) score += 10;
+    const completion = Math.min(score, 100);
 
-    // -------------------------------------------------
-    // 🔥 FINAL PERCENTAGE
-    // -------------------------------------------------
-    const completion = Math.min(score, 100); // safety guard
-
-    // -------------------------------------------------
-    // RETURN RESPONSE
-    // -------------------------------------------------
     return res.json({
       success: true,
       completion,
@@ -84,11 +99,54 @@ export const getExpertProfile = async (req, res) => {
         company: expert.professionalDetails?.company || "",
       }
     });
+  } catch (err) {
+    console.error("uploadProfilePhoto error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Internal server error" });
+  }
+};
+
+
+export const getExpertProfile = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    console.log('New',userId);
+    
+    console.log(req.body);
+    
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "User ID missing" });
+    }
+
+    const expert = await ExpertDetails.findOne({ userId });
+
+    if (!expert) {
+      return res.status(404).json({
+        success: false,
+        message: "Expert profile not found"
+      });
+    }
+
+    const p = expert.personalInformation || {};
+    const professional = expert.professionalDetails || {};
+
+    return res.json({
+      success: true,
+      completion: 100, // or your logic
+      profile: {
+        name: p.userName || "",
+        title: professional.title || "",
+        company: professional.company || "",
+        photoUrl: expert.profileImage || ""
+      }
+    });
 
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
 
 
 // ----------------- get Personal Information -----------------

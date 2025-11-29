@@ -27,7 +27,7 @@ const ExpertEducation = () => {
     useEffect(() => {
         const fetchEducation = async () => {
             try {
-                const response = await axios.get("http://localhost:3000/api/auth/education", {
+                const response = await axios.get("http://localhost:3000/api/expert/education", {
                     headers: { userid: user }
                 });
 
@@ -52,7 +52,7 @@ const ExpertEducation = () => {
     const saveEducation = async () => {
         try {
             const response = await axios.put(
-                "http://localhost:3000/api/auth/education",
+                "http://localhost:3000/api/expert/education",
                 { education: profile.education },
                 { headers: { userid: user } }
             );
@@ -79,7 +79,7 @@ const ExpertEducation = () => {
 
             // Call DELETE endpoint to remove from DB
             const response = await axios.delete(
-                `http://localhost:3000/api/auth/education/${idx}`,
+                `http://localhost:3000/api/expert/education/${idx}`,
                 { headers: { userid: user } }
             );
 

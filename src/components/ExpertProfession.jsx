@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Card, IconButton, Input, PrimaryButton, SecondaryButton } from "../pages/ExpertDashboard";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const ExpertProfession = () => {
-  const user = "69255389e1a38f2afd8f663d"; // Replace with dynamic userId
+  const { user } = useAuth();
+          //console.log(user._id);
+        const user_id = user._id// Replace with dynamic userId
 
   const initialProfile = {
     professional: {
@@ -22,8 +25,8 @@ const ExpertProfession = () => {
   useEffect(() => {
     const fetchProfessional = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/auth/profession", {
-          headers: { userid: user }
+        const res = await axios.get("http://localhost:3000/api/expert/profession", {
+          headers: { userid: user_id }
         });
         if (res.data.success) {
           setProfile({ professional: res.data.data });
@@ -70,7 +73,7 @@ const removeExperience = async (idx) => {
 
     // Call backend to delete by index
     const res = await axios.delete(
-      `http://localhost:3000/api/auth/profession/previous/${idx}`,
+      `http://localhost:3000/api/expert/profession/previous/${idx}`,
       { headers: { userid: user } }
     );
 
@@ -87,7 +90,7 @@ const removeExperience = async (idx) => {
   const saveProfessional = async () => {
     try {
       const res = await axios.put(
-        "http://localhost:3000/api/auth/profession",
+        "http://localhost:3000/api/expert/profession",
         { professionalDetails: profile.professional },
         { headers: { userid: user } }
       );
