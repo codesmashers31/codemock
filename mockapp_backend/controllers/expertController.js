@@ -1,25 +1,92 @@
-import ExpertDetails from '../models/expertModel.js'
-// controllers/expertController.js (add below getExpertProfile)
+// controllers/expertController.js
 import path from "path";
 import fs from "fs";
-
-// if you already have multer config, use that instead
 import multer from "multer";
-import { log } from 'console';
+import mongoose from "mongoose";
+import ExpertDetails from "../models/expertModel.js"; // adjust if file name differs
 
-// ----------------- profile completion -----------------
-// Controller file (where getExpertProfile lives)
- // adjust import path as needed
+/* -------------------- Helpers -------------------- */
+const resolveUserIdFromReq = (req) => {
+  if (req.user) {
+    const u = req.user;
+    if (u.id) return String(u.id);
+    if (u._id) return String(u._id);
+    if (u.userId) return String(u.userId);
+    if (u.user_id) return String(u.user_id);
+    if (u.sub) return String(u.sub);
+  }
 
-// Simple local storage multer (modify for S3 or cloud storage in production)
+  // fallback: header (only emergency/legacy)
+  const headerCandidate = req.headers.userid || req.headers.userId || req.headers["user-id"];
+  if (headerCandidate) {
+    // header may contain JSON string or object; try normalize
+    try {
+      if (typeof headerCandidate === "string" && headerCandidate.trim().startsWith("{")) {
+        const parsed = JSON.parse(headerCandidate);
+        if (parsed.id) return String(parsed.id);
+        if (parsed._id) return String(parsed._id);
+        if (parsed.userId) return String(parsed.userId);
+      }
+      if (typeof headerCandidate === "object") {
+        if (headerCandidate.id) return String(headerCandidate.id);
+        if (headerCandidate._id) return String(headerCandidate._id);
+        if (headerCandidate.userId) return String(headerCandidate.userId);
+      }
+      return String(headerCandidate);
+    } catch (e) {
+      return String(headerCandidate);
+    }
+  }
+
+  return null;
+};
+
+const isValidObjectId = (id) => {
+  return typeof id === "string" && /^[a-fA-F0-9]{24}$/.test(id);
+};
+
+/**
+ * Convert to mongoose ObjectId only if id is a valid 24-hex string.
+ * Otherwise return the original id (so searches against string-stored ids still work).
+ */
+const toObjectId = (id) => {
+  if (!isValidObjectId(id)) return id;
+  return new mongoose.Types.ObjectId(id);
+};
+
+/* -------------------- computeCompletion -------------------- */
+const computeCompletion = (expert) => {
+  let score = 0;
+  const p = expert.personalInformation || {};
+  const personalFilled =
+    p.userName && p.mobile && p.gender && p.dob && p.country && p.state && p.city;
+  if (personalFilled) score += 25;
+  if (Array.isArray(expert.education) && expert.education.length) score += 15;
+  const pd = expert.professionalDetails || {};
+  const proFilled =
+    pd.title && pd.company && pd.industry && (typeof pd.totalExperience === "number");
+  if (proFilled) score += 20;
+  const sk = expert.skillsAndExpertise || {};
+  if ((sk.domains?.length || sk.tools?.length || sk.languages?.length)) score += 15;
+  const av = expert.availability || {};
+  // ensure weekly is treated as plain object
+  const weeklyObj = av.weekly || {};
+  const weeklyHasSlots = Object.values(weeklyObj || {}).some(arr => Array.isArray(arr) && arr.length > 0);
+  const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
+  if (availabilityFilled) score += 15;
+  if (expert.profileImage) score += 10;
+  return Math.min(score, 100);
+};
+
+/* -------------------- multer for uploads -------------------- */
 const uploadDir = path.join(process.cwd(), "uploads", "profileImages");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination(req, file, cb) {
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
+  filename(req, file, cb) {
     const ext = path.extname(file.originalname) || ".jpg";
     const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
     cb(null, name);
@@ -27,610 +94,436 @@ const storage = multer.diskStorage({
 });
 export const uploadMiddleware = multer({ storage });
 
-// Controller to handle photo upload
+/* -------------------- uploadProfilePhoto -------------------- */
 export const uploadProfilePhoto = async (req, res) => {
   try {
-    const userId = req.headers.userid || req.header("userid");
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID missing in headers (send header 'userid')" });
-    }
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized: user id missing" });
 
-    // multer should have put file on req.file
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "No file uploaded. Field name must be 'photo'." });
-    }
+    if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded. Use field 'photo'." });
 
-    // Build a URL or path for the saved image. Adjust if using CDN/S3.
-    // Example: /uploads/profileImages/<filename>
-    const photoUrl = `/uploads/profileImages/${req.file.filename}`;
+    // build accessible URL (use host from request)
+    const protocol = req.protocol || "http";
+    const host = req.get("host") || `localhost:${process.env.PORT || 3000}`;
+    const photoUrl = `${protocol}://${host}/uploads/profileImages/${req.file.filename}`;
 
-    // Find expert
-    const expert = await ExpertDetails.findOne({ userId });
+    // find expert
+    const queryUserId = toObjectId(userIdRaw);
+
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
     if (!expert) {
-      // If you want to allow creating a new ExpertDetails, you'd need to supply required personalInformation fields.
-      return res.status(404).json({
-        success: false,
-        message: "Expert profile not found. Please create/complete Personal Information before uploading a photo.",
-      });
+      return res.status(404).json({ success: false, message: "Expert profile not found. Create personal info first." });
     }
 
-    // Update profileImage
     expert.profileImage = photoUrl;
     await expert.save();
 
-    // Recalculate completion (reuse logic from getExpertProfile)
-    let score = 0;
-    const p = expert.personalInformation || {};
-    const personalFilled =
-      p.userName &&
-      p.mobile &&
-      p.gender &&
-      p.dob &&
-      p.country &&
-      p.state &&
-      p.city;
+    const completion = computeCompletion(expert);
 
-    if (personalFilled) score += 25;
-    if (Array.isArray(expert.education) && expert.education.length > 0) score += 15;
-    const pd = expert.professionalDetails || {};
-    const proFilled =
-      pd.title &&
-      pd.company &&
-      pd.industry &&
-      typeof pd.totalExperience === "number";
-    if (proFilled) score += 20;
-    const sk = expert.skillsAndExpertise || {};
-    if ((sk.domains?.length || sk.tools?.length || sk.languages?.length)) score += 15;
-    const av = expert.availability || {};
-    const weeklyHasSlots =
-      av.weekly && Object.values(av.weekly || {}).some((arr) => Array.isArray(arr) && arr.length > 0);
-    const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
-    if (availabilityFilled) score += 15;
-    if (expert.profileImage) score += 10;
-    const completion = Math.min(score, 100);
+    const profile = {
+      name: expert.personalInformation?.userName || "",
+      title: expert.professionalDetails?.title || "",
+      company: expert.professionalDetails?.company || "",
+      photoUrl: expert.profileImage || ""
+    };
 
-    return res.json({
-      success: true,
-      completion,
-      profile: {
-        name: expert.personalInformation?.userName || "",
-        photoUrl: expert.profileImage || "",
-        title: expert.professionalDetails?.title || "",
-        company: expert.professionalDetails?.company || "",
-      }
-    });
+    return res.json({ success: true, message: "Photo uploaded", completion, profile });
   } catch (err) {
     console.error("uploadProfilePhoto error:", err);
     return res.status(500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
-
+/* -------------------- getExpertProfile -------------------- */
 export const getExpertProfile = async (req, res) => {
   try {
-    const userId = req.user.id || req.user._id;
-    console.log('New',userId);
-    
-    console.log(req.body);
-    
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized: user id missing" });
 
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID missing" });
-    }
+    const queryUserId = toObjectId(userIdRaw);
+    const expert = await ExpertDetails.findOne({ userId: queryUserId }).lean();
+    if (!expert) return res.status(404).json({ success: false, message: "Expert profile not found" });
 
-    const expert = await ExpertDetails.findOne({ userId });
+    const profile = {
+      name: expert.personalInformation?.userName || "",
+      mobile: expert.personalInformation?.mobile || "",
+      gender: expert.personalInformation?.gender || "",
+      dob: expert.personalInformation?.dob ? new Date(expert.personalInformation.dob).toISOString().split("T")[0] : "",
+      country: expert.personalInformation?.country || "",
+      state: expert.personalInformation?.state || "",
+      city: expert.personalInformation?.city || "",
+      title: expert.professionalDetails?.title || "",
+      company: expert.professionalDetails?.company || "",
+      totalExperience: expert.professionalDetails?.totalExperience ?? "",
+      industry: expert.professionalDetails?.industry || "",
+      previous: expert.professionalDetails?.previous || [],
+      education: expert.education || [],
+      skillsAndExpertise: expert.skillsAndExpertise || { mode: "Online", domains: [], tools: [], languages: [] },
+      availability: expert.availability || { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
+      photoUrl: expert.profileImage || ""
+    };
 
-    if (!expert) {
-      return res.status(404).json({
-        success: false,
-        message: "Expert profile not found"
-      });
-    }
-
-    const p = expert.personalInformation || {};
-    const professional = expert.professionalDetails || {};
-
-    return res.json({
-      success: true,
-      completion: 100, // or your logic
-      profile: {
-        name: p.userName || "",
-        title: professional.title || "",
-        company: professional.company || "",
-        photoUrl: expert.profileImage || ""
-      }
-    });
-
+    const completion = computeCompletion(expert);
+    return res.json({ success: true, completion, profile });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("getExpertProfile error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Internal server error" });
   }
 };
 
-
-
-
-// ----------------- get Personal Information -----------------
+/* -------------------- getPersonalInfo (uses resolver) -------------------- */
 export const getPersonalInfo = async (req, res) => {
   try {
-    const userId = req.headers.userid;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized: user id missing" });
 
-    const expert = await ExpertDetails.findOne({ userId });
+    const queryUserId = toObjectId(userIdRaw);
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
 
     if (expert) {
       return res.status(200).json({ success: true, data: expert.personalInformation });
     } else {
-      // User not present, return empty object
       return res.status(200).json({
         success: true,
-        data: {
-          userName: "",
-          mobile: "",
-          gender: "",
-          dob: "",
-          country: "",
-          state: "",
-          city: "",
-        },
+        data: { userName: "", mobile: "", gender: "", dob: "", country: "", state: "", city: "" }
       });
     }
   } catch (err) {
-    console.error(err);
+    console.error("getPersonalInfo error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// ----------------- Update Personal Information -----------------
+/* -------------------- updatePersonalInfo (safe upsert) -------------------- */
 export const updatePersonalInfo = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { userName, mobile, gender, dob, country, state, city } = req.body;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+
+    const { userName = "", mobile = "", gender = "Male", dob = null, country = "", state = "", city = "" } = req.body;
+
+    const personalObj = {
+      userName: (userName || "").toString().trim(),
+      mobile: (mobile || "").toString().trim(),
+      gender,
+      dob,
+      country: (country || "").toString().trim(),
+      state: (state || "").toString().trim(),
+      city: (city || "").toString().trim()
+    };
 
     const expert = await ExpertDetails.findOneAndUpdate(
-      { userId },
-      {
-        personalInformation: {
-          userName: userName.trim(),
-          mobile: mobile.trim(),
-          gender,
-          dob,
-          country: country.trim(),
-          state: state.trim(),
-          city: city.trim(),
-        },
-        userId, // needed if creating new doc
-      },
-      { new: true, upsert: true } // create if not exists, return updated doc
+      { userId: queryUserId },
+      { personalInformation: personalObj, userId: queryUserId },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
-    res.status(200).json({
-      success: true,
-      message: "Personal info updated successfully",
-      data: expert,
-    });
+    return res.status(200).json({ success: true, message: "Personal info updated successfully", data: expert });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("updatePersonalInfo error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-
-// ----------------- Get Education -----------------
+/* -------------------- getEducation / updateEducation / deleteEducationEntry -------------------- */
 export const getEducation = async (req, res) => {
   try {
-    const userId = req.headers.userid;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
 
-    const expert = await ExpertDetails.findOne({ userId });
-
-    if (expert && expert.education && expert.education.length > 0) {
-      return res.status(200).json({ success: true, data: expert.education });
-    } else {
-      // No education entries yet
-      return res.status(200).json({ success: true, data: [] });
-    }
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (expert && expert.education && expert.education.length) return res.status(200).json({ success:true, data: expert.education });
+    return res.status(200).json({ success:true, data: [] });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("getEducation error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-// ----------------- Update Education -----------------
 export const updateEducation = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { education } = req.body; // expects array of education objects
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+    const { education } = req.body;
+    if (!education || !Array.isArray(education)) return res.status(400).json({ success:false, message:"Education must be an array" });
 
-    if (!education || !Array.isArray(education)) {
-      return res.status(400).json({ success: false, message: "Education must be an array" });
-    }
+    const mapped = education.map(edu => ({
+      degree: edu.degree || "",
+      institution: edu.institution || "",
+      field: edu.field || "",
+      start: edu.start || null,
+      end: edu.end || null
+    }));
 
-    // Ensure user exists (optional: can enforce personal info first)
     const expert = await ExpertDetails.findOneAndUpdate(
-      { userId },
-      {
-        education: education.map((edu) => ({
-          degree: edu.degree || "",
-          institution: edu.institution || "",
-          field: edu.field || "",
-          start: edu.start || "",
-          end: edu.end || "",
-        })),
-        userId, // upsert needs this
-      },
-      { new: true, upsert: true } // create if not exists, return updated doc
+      { userId: queryUserId },
+      { education: mapped, userId: queryUserId },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
-    res.status(200).json({
-      success: true,
-      message: "Education info updated successfully",
-      data: expert.education,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    return res.status(200).json({ success:true, message:"Education updated", data: expert.education });
+  } catch (err) {
+    console.error("updateEducation error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-// ----------------- Delete single education entry -----------------
 export const deleteEducationEntry = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { idx } = req.params; // index to delete
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+    const { idx } = req.params;
 
-    const expert = await ExpertDetails.findOne({ userId });
-    if (!expert) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"User not found" });
+
+    if (!Array.isArray(expert.education) || idx < 0 || idx >= expert.education.length) {
+      return res.status(400).json({ success:false, message:"Invalid index" });
     }
 
-    if (idx < 0 || idx >= expert.education.length) {
-      return res.status(400).json({ success: false, message: "Invalid index" });
-    }
-
-    // Remove the entry at the given index
     expert.education.splice(idx, 1);
-
-    // Save without running validators for unrelated fields
     await expert.save({ validateBeforeSave: false });
 
-    res.status(200).json({
-      success: true,
-      message: "Education entry deleted successfully",
-      data: expert.education,
-    });
+    return res.status(200).json({ success:true, message:"Education entry deleted", data: expert.education });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("deleteEducationEntry error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-
-// ----------------- GET Professional -----------------
+/* -------------------- getProfessional / updateProfessional / deletePreviousExperience -------------------- */
 export const getProfessional = async (req, res) => {
   try {
-    const userId = req.headers.userid;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
 
-    const expert = await ExpertDetails.findOne({ userId });
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (expert && expert.professionalDetails) return res.status(200).json({ success:true, data: expert.professionalDetails });
 
-    if (expert && expert.professionalDetails) {
-      return res.status(200).json({
-        success: true,
-        data: expert.professionalDetails,
-      });
-    }
-
-    // Default empty structure
-    return res.status(200).json({
-      success: true,
-      data: {
-        title: "",
-        company: "",
-        totalExperience: "",
-        industry: "",
-        previous: [],
-      },
-    });
+    return res.status(200).json({ success:true, data:{ title:"", company:"", totalExperience:"", industry:"", previous:[] } });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("getProfessional error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-// ----------------- UPDATE Professional -----------------
 export const updateProfessional = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { professionalDetails } = req.body;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
 
-    if (!professionalDetails) {
-      return res.status(400).json({
-        success: false,
-        message: "Professional details are required",
-      });
-    }
+    const professionalDetails = req.body.professionalDetails || req.body;
+    if (!professionalDetails) return res.status(400).json({ success:false, message:"Professional details required" });
+
+    const payload = {
+      title: professionalDetails.title || "",
+      company: professionalDetails.company || "",
+      totalExperience: Number(professionalDetails.totalExperience) || 0,
+      industry: professionalDetails.industry || "",
+      previous: Array.isArray(professionalDetails.previous)
+        ? professionalDetails.previous.map(exp => ({
+            company: exp.company || "",
+            title: exp.title || "",
+            start: exp.start || null,
+            end: exp.end || null
+          }))
+        : []
+    };
 
     const expert = await ExpertDetails.findOneAndUpdate(
-      { userId },
-      {
-        professionalDetails: {
-          title: professionalDetails.title || "",
-          company: professionalDetails.company || "",
-          totalExperience: professionalDetails.totalExperience || 0,
-          industry: professionalDetails.industry || "",
-          previous: Array.isArray(professionalDetails.previous)
-            ? professionalDetails.previous.map((exp) => ({
-              company: exp.company || "",
-              title: exp.title || "",
-              start: exp.start || "",
-              end: exp.end || "",
-            }))
-            : [],
-        },
-        userId,
-      },
-      { new: true, upsert: true }
+      { userId: queryUserId },
+      { professionalDetails: payload, userId: queryUserId },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Professional details updated",
-      data: expert.professionalDetails,
-    });
+    return res.status(200).json({ success:true, message:"Professional details updated", data: expert.professionalDetails });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("updateProfessional error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-// ----------------- DELETE One Previous Experience -----------------
 export const deletePreviousExperience = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { idx } = req.params; // index to delete
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+    const { idx } = req.params;
 
-    const expert = await ExpertDetails.findOne({ userId });
-    if (!expert) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"User not found" });
+
+    if (!expert.professionalDetails || !Array.isArray(expert.professionalDetails.previous) || idx < 0 || idx >= expert.professionalDetails.previous.length) {
+      return res.status(400).json({ success:false, message:"Invalid index" });
     }
 
-    // Validate index and existence of previous array
-    if (
-      !expert.professionalDetails ||
-      !expert.professionalDetails.previous ||
-      idx < 0 ||
-      idx >= expert.professionalDetails.previous.length
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid index",
-      });
-    }
-
-    // Remove entry
     expert.professionalDetails.previous.splice(idx, 1);
-
-    // Save WITHOUT triggering validators for other fields
     await expert.save({ validateBeforeSave: false });
+
+    return res.status(200).json({ success:true, message:"Previous experience deleted", data: expert.professionalDetails.previous });
+  } catch (err) {
+    console.error("deletePreviousExperience error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
+  }
+};
+
+/* -------------------- getSkillsAndExpertise / updateSkillsAndExpertise -------------------- */
+export const getSkillsAndExpertise = async (req, res) => {
+  try {
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"User not found" });
 
     return res.status(200).json({
       success: true,
-      message: "Previous experience deleted successfully",
-      data: expert.professionalDetails.previous,
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-};
-
-
-// ----------------- GET SkillsAndExpertise -----------------
-export const getSkillsAndExpertise = async (req, res) => {
-  try {
-    const userId = req.headers.userid;
-
-    const expert = await ExpertDetails.findOne({ userId });
-    if (!expert) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    res.status(200).json({
-      success: true,
       message: "Skills & Expertise fetched successfully",
-      data: expert.skillsAndExpertise || {
-        mode: "Online",
-        domains: [],
-        tools: [],
-        languages: [],
-      }
+      data: expert.skillsAndExpertise || { mode: "Online", domains: [], tools: [], languages: [] }
     });
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("getSkillsAndExpertise error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-// ----------------- UPDATE SkillsAndExpertise -----------------
 export const updateSkillsAndExpertise = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const skills = req.body.skillsAndExpertise; // FIXED HERE
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
 
-    if (!skills) {
-      return res.status(400).json({
-        success: false,
-        message: "skillsAndExpertise is required in body",
-      });
-    }
+    const skills = req.body.skillsAndExpertise;
+    if (!skills) return res.status(400).json({ success:false, message:"skillsAndExpertise is required in body" });
 
     const { mode, domains, tools, languages } = skills;
 
-    const expert = await ExpertDetails.findOne({ userId });
-    if (!expert) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"User not found" });
 
-    // Validate mode
+    if (!expert.skillsAndExpertise) expert.skillsAndExpertise = { mode: "Online", domains: [], tools: [], languages: [] };
+
     if (mode) {
       const allowedModes = ["Online", "Offline", "Hybrid"];
-      if (!allowedModes.includes(mode)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid mode. Allowed: Online, Offline, Hybrid",
-        });
-      }
+      if (!allowedModes.includes(mode)) return res.status(400).json({ success:false, message:"Invalid mode" });
       expert.skillsAndExpertise.mode = mode;
     }
-
-    if (Array.isArray(domains)) {
-      expert.skillsAndExpertise.domains = domains;
-    }
-
-    if (Array.isArray(tools)) {
-      expert.skillsAndExpertise.tools = tools;
-    }
-
-    if (Array.isArray(languages)) {
-      expert.skillsAndExpertise.languages = languages;
-    }
+    if (Array.isArray(domains)) expert.skillsAndExpertise.domains = domains;
+    if (Array.isArray(tools)) expert.skillsAndExpertise.tools = tools;
+    if (Array.isArray(languages)) expert.skillsAndExpertise.languages = languages;
 
     await expert.save({ validateBeforeSave: false });
-
-    res.status(200).json({
-      success: true,
-      message: "Skills & Expertise updated successfully",
-      data: expert.skillsAndExpertise,
-    });
-
+    return res.status(200).json({ success:true, message:"Skills updated", data: expert.skillsAndExpertise });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("updateSkillsAndExpertise error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-
-// ----------------- GET Availability -----------------
+/* -------------------- getAvailability / updateAvailability / delete helpers -------------------- */
 export const getAvailability = async (req, res) => {
   try {
-    const userId = req.headers.userid;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
 
-    const expert = await ExpertDetails.findOne({ userId });
+    const queryUserId = toObjectId(userIdRaw);
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
 
-    if (expert && expert.availability) {
-      return res.status(200).json({
-        success: true,
-        data: expert.availability,
-      });
-    }
+    if (expert && expert.availability) return res.status(200).json({ success:true, data: expert.availability });
 
-    // Default empty structure
-    return res.status(200).json({
-      success: true,
-      data: {
-        timezone: "",
-        days: [],
-        slots: [],
-      },
-    });
+    return res.status(200).json({ success:true, data: { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] } });
   } catch (err) {
-    console.error("Error in getAvailability:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("getAvailability error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-
-// ----------------- UPDATE Availability -----------------
 export const updateAvailability = async (req, res) => {
   try {
-    const userId = req.headers.userid;
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+
+    const queryUserId = toObjectId(userIdRaw);
     const newAvailability = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ success: false, message: "User ID missing in headers" });
-    }
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"Expert not found" });
 
-    // Find expert by userId
-    const expert = await ExpertDetails.findOne({ userId });
+    if (!expert.availability) expert.availability = { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] };
 
-    if (!expert) {
-      return res.status(404).json({ success: false, message: "Expert not found" });
-    }
-
-    // Update availability fields
-    expert.availability.sessionDuration = newAvailability.sessionDuration || expert.availability.sessionDuration;
-    expert.availability.maxPerDay = newAvailability.maxPerDay || expert.availability.maxPerDay;
-    expert.availability.weekly = newAvailability.weekly || expert.availability.weekly;
-    expert.availability.breakDates = newAvailability.breakDates || expert.availability.breakDates;
+    expert.availability.sessionDuration = newAvailability.sessionDuration ?? expert.availability.sessionDuration;
+    expert.availability.maxPerDay = newAvailability.maxPerDay ?? expert.availability.maxPerDay;
+    // ensure weekly is a plain object
+    expert.availability.weekly = newAvailability.weekly ?? expert.availability.weekly ?? {};
+    expert.availability.breakDates = newAvailability.breakDates ?? expert.availability.breakDates ?? [];
 
     await expert.save();
-
-    return res.status(200).json({ success: true, message: "Availability updated successfully", data: expert.availability });
+    return res.status(200).json({ success:true, message:"Availability updated", data: expert.availability });
   } catch (err) {
-    console.error("Error in updateAvailability:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("updateAvailability error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-
-/* ----------------- Delete a Break Date ----------------- */
 export const deleteBreakDate = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { start } = req.body; // the start date of the break to remove
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+    const { start } = req.body;
+    if (!start) return res.status(400).json({ success:false, message:"Break start missing" });
 
-    if (!userId || !start) {
-      return res.status(400).json({ success: false, message: "User ID or break date missing" });
-    }
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"Expert not found" });
 
-    const expert = await ExpertDetails.findOne({ userId });
-    if (!expert) {
-      return res.status(404).json({ success: false, message: "Expert not found" });
-    }
-
-    expert.availability.breakDates = expert.availability.breakDates.filter(
-      (d) => d.start.toISOString() !== new Date(start).toISOString()
-    );
+    // Normalize and compare ISO strings to be robust for Date/string variants
+    const targetIso = new Date(start).toISOString();
+    expert.availability = expert.availability || { breakDates: [], weekly: {} };
+    expert.availability.breakDates = (expert.availability.breakDates || []).filter(d => {
+      try {
+        return new Date(d.start).toISOString() !== targetIso;
+      } catch (e) {
+        // if parsing fails, keep the entry
+        return true;
+      }
+    });
 
     await expert.save();
-
-    return res.status(200).json({ success: true, message: "Break date removed", data: expert.availability.breakDates });
+    return res.status(200).json({ success:true, message:"Break date removed", data: expert.availability.breakDates });
   } catch (err) {
-    console.error("Error deleting break date:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("deleteBreakDate error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };
 
-/* ----------------- Delete a Weekly Slot ----------------- */
 export const deleteWeeklySlot = async (req, res) => {
   try {
-    const userId = req.headers.userid;
-    const { day, from } = req.body; // day = "mon", "tue", etc., from = slot start time
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success:false, message:"Unauthorized: user id missing" });
+    const queryUserId = toObjectId(userIdRaw);
+    const { day, from } = req.body;
+    if (!day || !from) return res.status(400).json({ success:false, message:"Day or from missing" });
 
-    if (!userId || !day || !from) {
-      return res.status(400).json({ success: false, message: "User ID, day, or slot start time missing" });
-    }
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+    if (!expert) return res.status(404).json({ success:false, message:"Expert not found" });
 
-    const expert = await ExpertDetails.findOne({ userId });
-    if (!expert) {
-      return res.status(404).json({ success: false, message: "Expert not found" });
-    }
-
-    const slots = expert.availability.weekly.get(day) || [];
-    expert.availability.weekly.set(
-      day,
-      slots.filter(slot => slot.from !== from)
-    );
+    expert.availability = expert.availability || { weekly: {} };
+    const weekly = expert.availability.weekly || {};
+    const slots = Array.isArray(weekly[day]) ? weekly[day] : [];
+    weekly[day] = slots.filter(slot => slot.from !== from);
+    expert.availability.weekly = weekly;
 
     await expert.save();
-
-    return res.status(200).json({ success: true, message: "Slot removed", data: expert.availability.weekly.get(day) });
+    return res.status(200).json({ success:true, message:"Slot removed", data: expert.availability.weekly[day] });
   } catch (err) {
-    console.error("Error deleting weekly slot:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    console.error("deleteWeeklySlot error:", err);
+    return res.status(500).json({ success:false, message:"Server error" });
   }
 };

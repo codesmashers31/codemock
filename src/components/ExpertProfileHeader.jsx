@@ -81,11 +81,11 @@ const ExpertProfileHeader = () => {
     }
 
     try {
-      const res = await axios.get("/api/expert/profile", {
+      const res = await axios.get("http://localhost:3000/api/expert/profile", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      console.log("GET /api/expert/profile =>", res?.data);
+      //console.log("GET http://localhost:3000/api/expert/profile =>", res?.data);
 
       if (res.data?.success) {
         const p = res.data.profile || {};
@@ -128,11 +128,11 @@ const ExpertProfileHeader = () => {
       const fd = new FormData();
       fd.append("photo", file);
 
-      const res = await axios.post("/api/expert/profile/photo", fd, {
+      const res = await axios.post("http://localhost:3000/api/expert/profile/photo", fd, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
       });
 
-      console.log("POST /api/expert/profile/photo =>", res?.data);
+      //console.log("POST http://localhost:3000/api/expert/profile/photo =>", res?.data);
 
       if (res.data?.success) {
         const p = res.data.profile || {};
@@ -159,7 +159,10 @@ const ExpertProfileHeader = () => {
   return (
     <Card className="text-center relative">
       <div className="flex flex-col items-center">
+        {/* <p>{profile.photoUrl}</p> */}
         <ProgressRing percent={completion} size={120} stroke={8}>
+
+          
           {profile.photoUrl ? (
             <img src={profile.photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
           ) : (
