@@ -15,7 +15,11 @@ interface Notification {
 
 export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const { user, logout } = useAuth();
+
+  //console.log(user);
+
   const navigate = useNavigate();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -104,6 +108,31 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     navigate("/signin", { replace: true });
   };
 
+  useEffect(() => {
+    if (!user) {
+      setAvatarUrl(null);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("/api/expert/profile");
+        if (res.data?.success) {
+          const url = res.data.profile?.photoUrl || "";
+          setAvatarUrl(url || null);
+        } else {
+          setAvatarUrl(null);
+        }
+      } catch (err) {
+        console.error("Failed to load expert profile", err);
+        setAvatarUrl(null);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+
   // Small helper to render icons
   const getNotificationIcon = (type: Notification["type"]) => {
     switch (type) {
@@ -134,7 +163,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     }
   };
 
-  const avatarSrc = user?.avatar || "/avatar-placeholder.png";
+  const avatarSrc = avatarUrl || "/avatar-placeholder.png";
 
   return (
     <header className="w-full bg-white border-b border-gray-200 p-3 flex items-center justify-between sticky top-0 z-50">
@@ -221,12 +250,11 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 hover:bg-gray-50 border-l-4 ${
-                        notification.read ? "border-transparent" :
+                      className={`px-4 py-3 hover:bg-gray-50 border-l-4 ${notification.read ? "border-transparent" :
                         notification.type === "success" ? "border-green-500" :
-                        notification.type === "warning" ? "border-yellow-500" :
-                        notification.type === "error" ? "border-red-500" : "border-blue-500"
-                      }`}
+                          notification.type === "warning" ? "border-yellow-500" :
+                            notification.type === "error" ? "border-red-500" : "border-blue-500"
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-0.5">{getNotificationIcon(notification.type)}</div>

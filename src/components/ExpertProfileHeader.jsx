@@ -53,15 +53,15 @@ function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
 
 const ExpertProfileHeader = () => {
 
-  
-      const { user } = useAuth();
-        //console.log(user._id);
-      const user_id = user._id
-  
+
+  const { user } = useAuth();
+  //console.log(user._id);
+  const user_id = user._id
+
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const photoInputRef = useRef(null);
 
-  const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "" });
+  const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "", status: "pending" });
   const [completion, setCompletion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -93,7 +93,8 @@ const ExpertProfileHeader = () => {
           name: p.name || fallbackName,
           title: p.title || "",
           company: p.company || "",
-          photoUrl: p.photoUrl || ""
+          photoUrl: p.photoUrl || "",
+          status: p.status || "pending"
         });
         setCompletion(typeof res.data.completion === "number" ? res.data.completion : 0);
       } else {
@@ -141,7 +142,8 @@ const ExpertProfileHeader = () => {
           name: p.name || prev.name,
           title: p.title || prev.title,
           company: p.company || prev.company,
-          photoUrl: p.photoUrl || prev.photoUrl
+          photoUrl: p.photoUrl || prev.photoUrl,
+          status: p.status || prev.status
         }));
         setCompletion(typeof res.data.completion === "number" ? res.data.completion : completion);
       } else {
@@ -158,16 +160,25 @@ const ExpertProfileHeader = () => {
 
   return (
     <Card className="text-center relative">
+      <div className="absolute top-4 right-4">
+        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${profile.status === "approved" ? "bg-green-100 text-green-700" :
+          profile.status === "rejected" ? "bg-red-100 text-red-700" :
+            "bg-yellow-100 text-yellow-700"
+          }`}>
+          {profile.status === "approved" ? "Approved" :
+            profile.status === "rejected" ? "Rejected" : "Pending Verification"}
+        </span>
+      </div>
       <div className="flex flex-col items-center">
         {/* <p>{profile.photoUrl}</p> */}
         <ProgressRing percent={completion} size={120} stroke={8}>
 
-          
+
           {profile.photoUrl ? (
             <img src={profile.photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
           ) : (
             <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-full">
-              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
             </div>
           )}
         </ProgressRing>

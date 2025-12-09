@@ -5,8 +5,8 @@ import { useAuth } from "../context/AuthContext";
 
 const ExpertProfession = () => {
   const { user } = useAuth();
-          //console.log(user._id);
-        const user_id = user._id// Replace with dynamic userId
+  //console.log(user._id);
+  const user_id = user._id// Replace with dynamic userId
 
   const initialProfile = {
     professional: {
@@ -62,29 +62,29 @@ const ExpertProfession = () => {
     });
   };
 
-const removeExperience = async (idx) => {
-  try {
-    // Update local state
-    const newPrevious = profile.professional.previous.filter((_, i) => i !== idx);
-    setProfile((p) => ({
-      ...p,
-      professional: { ...p.professional, previous: newPrevious }
-    }));
+  const removeExperience = async (idx) => {
+    try {
+      // Update local state
+      const newPrevious = profile.professional.previous.filter((_, i) => i !== idx);
+      setProfile((p) => ({
+        ...p,
+        professional: { ...p.professional, previous: newPrevious }
+      }));
 
-    // Call backend to delete by index
-    const res = await axios.delete(
-      `http://localhost:3000/api/expert/profession/previous/${idx}`,
-      { headers: { userid: user } }
-    );
+      // Call backend to delete by index
+      const res = await axios.delete(
+        `http://localhost:3000/api/expert/profession/previous/${idx}`,
+        { headers: { userid: user } }
+      );
 
-    if (!res.data.success) {
-      alert("Failed to remove experience in DB");
+      if (!res.data.success) {
+        alert("Failed to remove experience in DB");
+      }
+    } catch (err) {
+      console.error("Error removing experience:", err);
+      alert("Server error");
     }
-  } catch (err) {
-    console.error("Error removing experience:", err);
-    alert("Server error");
-  }
-};
+  };
 
 
   const saveProfessional = async () => {

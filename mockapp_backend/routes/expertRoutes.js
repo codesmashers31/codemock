@@ -16,7 +16,9 @@ import {
   getAvailability,
   updateAvailability,
   deleteBreakDate,
-  deleteWeeklySlot
+  deleteWeeklySlot,
+  uploadVerificationDocs,
+  uploadVerificationMiddleware
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
@@ -50,5 +52,15 @@ router.get("/availability", getAvailability);
 router.put("/availability", updateAvailability);
 router.delete("/availability/delbreak", deleteBreakDate);
 router.delete("/availability/delslot", deleteWeeklySlot);
+
+// Verification
+router.put(
+  "/verification",
+  uploadVerificationMiddleware.fields([
+    { name: "companyIdFile", maxCount: 1 },
+    { name: "aadharFile", maxCount: 1 },
+  ]),
+  uploadVerificationDocs
+);
 
 export default router;

@@ -18,7 +18,7 @@ app.use(express.json());
 
 // serve uploaded images (dev)
 app.use("/uploads/profileImages", express.static(path.join(process.cwd(), "uploads/profileImages")));
-
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // mount routers
 app.use("/api/auth", authRoutes);
 app.use("/api/expert", expertRoutes);

@@ -81,7 +81,7 @@ const expertSchema = new mongoose.Schema(
     personalInformation: {
       userName: { type: String, required: true, trim: true },
       mobile: { type: String, required: true, trim: true },
-      gender: { type: String, enum: ["Male", "Female", "Other"], default:"Male", required: true, trim: true },
+      gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male", required: true, trim: true },
       dob: { type: Date, required: true },
       country: { type: String, required: true, trim: true },
       state: { type: String, required: true, trim: true },
@@ -119,9 +119,21 @@ const expertSchema = new mongoose.Schema(
     },
 
     verification: {
-      companyIdFile: { type: String, trim: true },
-      aadharFile: { type: String, trim: true },
+      companyId: {
+        url: { type: String, trim: true },
+        name: { type: String, trim: true }
+      },
+      aadhar: {
+        url: { type: String, trim: true },
+        name: { type: String, trim: true }
+      },
       linkedin: { type: String, trim: true }
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
     },
 
     userId: {

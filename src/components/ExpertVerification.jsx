@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
 
@@ -10,6 +10,34 @@ const ExpertVerification = () => {
       linkedin: '',
     },
   });
+
+  // State to store fetched verification details (including name and url)
+  const [fetchedVerification, setFetchedVerification] = useState(null);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const userId = 'YOUR_USER_ID';
+      const response = await axios.get('http://localhost:3000/api/expert/profile', {
+        headers: { userid: userId },
+      });
+      if (response.data.success && response.data.profile.verification) {
+        setFetchedVerification(response.data.profile.verification);
+        setProfile((p) => ({
+          ...p,
+          verification: {
+            ...p.verification,
+            linkedin: response.data.profile.verification.linkedin || '',
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching profile", error);
+    }
+  };
 
   const companyIdRef = useRef(null);
   const aadharRef = useRef(null);
@@ -34,7 +62,7 @@ const ExpertVerification = () => {
       // Add userid header as needed, replace userId with actual user ID
       const userId = 'YOUR_USER_ID';
 
-      const response = await axios.put('http://localhost:3000/api/auth/verification', formData, {
+      const response = await axios.put('http://localhost:3000/api/expert/verification', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           userid: userId,
@@ -70,6 +98,14 @@ const ExpertVerification = () => {
             {profile.verification.companyIdFile && (
               <div className="text-sm text-green-600 mt-2 font-medium">✓ File selected</div>
             )}
+            {fetchedVerification?.companyId?.url && !profile.verification.companyIdFile && (
+              <div className="text-sm mt-2">
+                <span className="text-gray-600">Current: </span>
+                <a href={fetchedVerification.companyId.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                  {fetchedVerification.companyId.name || "View File"}
+                </a>
+              </div>
+            )}
           </div>
 
           <div>
@@ -83,6 +119,14 @@ const ExpertVerification = () => {
             />
             {profile.verification.aadharFile && (
               <div className="text-sm text-green-600 mt-2 font-medium">✓ File selected</div>
+            )}
+            {fetchedVerification?.aadhar?.url && !profile.verification.aadharFile && (
+              <div className="text-sm mt-2">
+                <span className="text-gray-600">Current: </span>
+                <a href={fetchedVerification.aadhar.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                  {fetchedVerification.aadhar.name || "View File"}
+                </a>
+              </div>
             )}
           </div>
 
