@@ -1,9 +1,10 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card } from '../pages/ExpertDashboard'
 
 // Dummy PrimaryButton component, replace or import accordingly
 const PrimaryButton = ({ children, onClick, className }) => (
-  <button onClick={onClick} className={`bg-blue-600 text-white rounded ${className}`}>
+  <button onClick={onClick} className={`bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ${className}`}>
     {children}
   </button>
 )
@@ -27,7 +28,26 @@ const profile = {
 }
 
 const ExpertTodaySessions = () => {
-  const joinSession = (s) => alert(`Joining session with ${s.name} at ${s.time}`)
+  const navigate = useNavigate();
+
+  const handleHostMeeting = async (s) => {
+    try {
+      const response = await fetch('http://localhost:3000/meeting/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expertId: '123' }) // Replace with real expert ID
+      });
+      const data = await response.json();
+      if (data.success) {
+        navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert`);
+      } else {
+        alert('Failed to create meeting');
+      }
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      alert('Error connecting to server');
+    }
+  };
 
   return (
     <>
@@ -56,8 +76,8 @@ const ExpertTodaySessions = () => {
                 <div className="text-right space-y-2">
                   <div className="font-semibold text-gray-900">{s.time}</div>
                   <div>
-                    <PrimaryButton onClick={() => joinSession(s)} className="px-4 py-2 text-sm">
-                      Join
+                    <PrimaryButton onClick={() => handleHostMeeting(s)} className="px-4 py-2 text-sm">
+                      Host Meeting
                     </PrimaryButton>
                   </div>
                 </div>

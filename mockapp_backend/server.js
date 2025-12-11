@@ -1,27 +1,47 @@
-// server.js
 import express from "express";
 import path from "path";
 import cors from "cors";
 import { config } from "dotenv";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import expertRoutes from "./routes/expertRoutes.js";
+import meetingRoutes from "./routes/meetingRoutes.js"; 
+import sessionRoutes from "./routes/sessionRoutes.js"; // New Session Routes
+import attachSignaling from "./websocket/signaling.js"; 
+import { seedTestSession } from "./services/sessionService.js";
 
-config(); // load .env
-await connectDB(); // ensure connectDB exports an async function or returns a promise
+config(); 
+await connectDB(); 
+// Seeding on startup
+await seedTestSession();
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*", 
+    methods: ["GET", "POST"]
+  }
+});
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// serve uploaded images (dev)
-app.use("/uploads/profileImages", express.static(path.join(process.cwd(), "uploads/profileImages")));
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-// mount routers
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/expert", expertRoutes);
+app.use("/api/meetings", meetingRoutes); // Refined Prefix
+app.use("/api/sessions", sessionRoutes); // New Prefix
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Static
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+// WebSocket Signaling
+attachSignaling(io);
+
+const PORT = 3000;
+httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));

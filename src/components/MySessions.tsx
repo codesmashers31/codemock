@@ -1,4 +1,5 @@
 import { SetStateAction, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Calendar, 
   Video, 
@@ -28,7 +29,7 @@ type Session = {
   date: string;
   time: string;
   price: string;
-  status: "Upcoming" | "Confirmed" | "Completed";
+  status: "Upcoming" | "Confirmed" | "Completed" | "upcoming" | "confirmed" | "completed";
   meetLink: string;
   rating: number;
   reviews: number;
@@ -38,6 +39,7 @@ type Session = {
 };
 
 const MySessions = () => {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -47,11 +49,11 @@ const MySessions = () => {
   const [sessionsPerPage] = useState<number>(6);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Dummy data with more sessions for pagination
   useEffect(() => {
+    // 1. Define Static Dummy Data (The "Booked Experts")
     const dummySessions: Session[] = [
       {
-        id: 1,
+        id: 101, // Changed IDs to avoid conflict with backend test ID (if any)
         expert: "Rajesh Kumar",
         role: "Senior Software Engineer",
         company: "Google",
@@ -69,7 +71,7 @@ const MySessions = () => {
         avatarColor: "from-blue-500 to-blue-600"
       },
       {
-        id: 2,
+        id: 102,
         expert: "Anitha R",
         role: "HR Specialist",
         company: "Microsoft",
@@ -87,7 +89,7 @@ const MySessions = () => {
         avatarColor: "from-purple-500 to-purple-600"
       },
       {
-        id: 3,
+        id: 103,
         expert: "Mike Johnson",
         role: "Product Manager",
         company: "Amazon",
@@ -105,7 +107,7 @@ const MySessions = () => {
         avatarColor: "from-gray-600 to-gray-700"
       },
       {
-        id: 4,
+        id: 104,
         expert: "Sarah Chen",
         role: "Data Scientist",
         company: "Meta",
@@ -123,7 +125,7 @@ const MySessions = () => {
         avatarColor: "from-green-500 to-green-600"
       },
       {
-        id: 5,
+        id: 105,
         expert: "David Wilson",
         role: "Frontend Architect",
         company: "Netflix",
@@ -141,7 +143,7 @@ const MySessions = () => {
         avatarColor: "from-red-500 to-red-600"
       },
       {
-        id: 6,
+        id: 106,
         expert: "Priya Sharma",
         role: "Career Coach",
         company: "Self Employed",
@@ -159,9 +161,105 @@ const MySessions = () => {
         avatarColor: "from-indigo-500 to-indigo-600"
       }
     ];
-    setSessions(dummySessions);
-    setFilteredSessions(dummySessions);
+
+    // 2. Fetch Dynamic Test Data & Merge
+    const fetchSessions = async () => {
+        try {
+            // Restricted Candidate ID
+            const candidateId = "693a94fee22c57842f09189e";
+            const res = await fetch(`http://localhost:3000/api/sessions/user/${candidateId}/role/candidate`);
+            const data = await res.json();
+            
+            let allSessions = [...dummySessions];
+
+            if (Array.isArray(data) && data.length > 0) {
+                 const backendSessions = data.map((s: any) => ({
+                    id: s._id || 999,
+                    expert: "Restricted Test Expert",
+                    role: "Strict Mode",
+                    company: "CodeMock",
+                    category: "IT",
+                    location: "Strict Server",
+                    date: new Date(s.startTime).toLocaleDateString(),
+                    time: new Date(s.startTime).toLocaleTimeString(),
+                    price: "PRIVATE",
+                    status: s.status,
+                    meetLink: "",
+                    rating: 5.0,
+                    reviews: 0,
+                    duration: "60 minutes",
+                    expertise: s.topics || ["Live"],
+                    avatarColor: "from-red-500 to-pink-600",
+                    sessionId: s.sessionId,
+                    startTime: s.startTime,
+                    endTime: s.endTime
+                }));
+                allSessions = [...backendSessions, ...dummySessions];
+            }
+            setSessions(allSessions);
+            setFilteredSessions(allSessions);
+        } catch (err) {
+            console.error("Failed to fetch sessions", err);
+            setSessions(dummySessions);
+            setFilteredSessions(dummySessions);
+        }
+    };
+    fetchSessions(); 
   }, []);
+
+  const handleJoinMeeting = async (session: any) => {
+    const candidateId = "693a94fee22c57842f09189e";  
+    try {
+        const res = await fetch(`http://localhost:3000/api/sessions/${session.sessionId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: candidateId })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.permitted) {
+            navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate`);
+        } else {
+            alert(data.message || "Cannot join session at this time.");
+        }
+    } catch (error) {
+        console.error("Join Error:", error);
+        alert("Failed to join session.");
+    }
+  };
+
+  const isSessionActive = (session: any) => {
+      const now = new Date();
+      let start, end;
+
+      if (session.startTime && session.endTime) {
+          // Backend format (ISO strings)
+          start = new Date(session.startTime);
+          end = new Date(session.endTime);
+      } else if (session.date && session.time) {
+          // Dummy data format ("YYYY-MM-DD", "HH:MM AM/PM")
+          // Parse date string + time string
+          const dateStr = session.date; // "2025-10-01"
+          const timeStr = session.time; // "10:30 AM"
+          const dateTimeStr = `${dateStr} ${timeStr}`;
+          start = new Date(dateTimeStr);
+          
+          // Assume 1 hour duration for dummy if parsing works, else fail safe
+          if (!isNaN(start.getTime())) {
+             end = new Date(start.getTime() + 60 * 60 * 1000);
+          } else {
+             return false; // Invalid date
+          }
+      } else {
+          return false;
+      }
+
+      // Check current time window
+      // Allow joining 10 mins before start until end
+      const bufferStart = new Date(start.getTime() - 10 * 60 * 1000); 
+      return now >= bufferStart && now < end;
+  };
 
   // Filter sessions based on search and filters
   useEffect(() => {
@@ -452,21 +550,23 @@ const MySessions = () => {
                         </span>
                       )}
                     </div>
-
                     {/* Price and Actions */}
                     <div className="flex items-center justify-between">
                       <div className="text-xl font-bold text-gray-900">{session.price}</div>
                       <div className="flex gap-2">
-                        {session.status === "Upcoming" || session.status === "Confirmed" ? (
-                          <a
-                            href={session.meetLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-1"
+{session.status === "Upcoming" || session.status === "Confirmed" || session.status === "confirmed" ? (
+                          <button
+                            onClick={() => handleJoinMeeting(session)}
+                            disabled={!isSessionActive(session)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
+                                isSessionActive(session) 
+                                ? "bg-gray-900 text-white hover:bg-gray-800" 
+                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            }`}
                           >
                             <Video className="w-4 h-4" />
                             Join
-                          </a>
+                          </button>
                         ) : (
                           <button className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-1">
                             <CheckCircle className="w-4 h-4" />
