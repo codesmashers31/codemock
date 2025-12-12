@@ -3,7 +3,28 @@ import { Save, Upload } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-export default function PersonalInfoSection({ profileData, onUpdate }) {
+interface PersonalInfo {
+    phone?: string;
+    dateOfBirth?: string | Date;
+    gender?: string;
+    country?: string;
+    state?: string;
+    city?: string;
+    bio?: string;
+}
+
+interface ProfileData {
+    name?: string;
+    profileImage?: string;
+    personalInfo?: PersonalInfo;
+}
+
+interface PersonalInfoSectionProps {
+    profileData: ProfileData | null;
+    onUpdate: () => void;
+}
+
+export default function PersonalInfoSection({ profileData, onUpdate }: PersonalInfoSectionProps) {
     const { user } = useAuth();
     const [formData, setFormData] = useState({
         phone: profileData?.personalInfo?.phone || "",
@@ -17,7 +38,7 @@ export default function PersonalInfoSection({ profileData, onUpdate }) {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -42,7 +63,7 @@ export default function PersonalInfoSection({ profileData, onUpdate }) {
         }
     };
 
-    const handleImageUpload = async (e) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 

@@ -1,15 +1,15 @@
 import http from 'http';
 
 // --- CONFIGURATION START ---
-const expertEmail = "kohsanar20@gmail.com";
-const candidateEmail = "kohsanar2011@gmail.com";
+const expertEmail = "balasudhan17@gmail.com";
+const candidateEmail = "codetalk24x7@gmail.com";
 
 // Timing Configuration
 const now = new Date();
 // Set start time (e.g., 2 minutes from now)
-const startTime = new Date(now.getTime() + 2 * 60 * 1000); 
+const startTime = new Date(now.getTime() + 2 * 60 * 1000);
 // Set end time (e.g., 60 minutes after start)
-const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); 
+const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
 // You can also hardcode dates like:
 // const startTime = new Date("2025-12-12T10:00:00Z");
@@ -25,7 +25,7 @@ const data = JSON.stringify({
 
 const options = {
   hostname: 'localhost',
-  port: 3000,
+  port: 5000,
   path: '/api/sessions/dev/seed/test-session',
   method: 'POST',
   headers: {
@@ -46,7 +46,7 @@ const req = http.request(options, (res) => {
   res.on('end', () => {
     console.log('Response:', responseBody);
     import('fs').then(fs => {
-        fs.writeFileSync('seed_output.json', responseBody);
+      fs.writeFileSync('seed_output.json', responseBody);
     });
   });
 });

@@ -3,9 +3,25 @@ import { Save, Plus, Trash2, Briefcase } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-export default function ExperienceSection({ profileData, onUpdate }) {
+interface Experience {
+    company: string;
+    position: string;
+    startDate: string;
+    endDate: string;
+    current: boolean;
+    description: string;
+}
+
+interface ExperienceSectionProps {
+    profileData: {
+        experience?: Experience[];
+    };
+    onUpdate: () => void;
+}
+
+export default function ExperienceSection({ profileData, onUpdate }: ExperienceSectionProps) {
     const { user } = useAuth();
-    const [experience, setExperience] = useState(profileData?.experience || []);
+    const [experience, setExperience] = useState<Experience[]>(profileData?.experience || []);
     const [saving, setSaving] = useState(false);
 
     const addExperience = () => {
@@ -19,11 +35,11 @@ export default function ExperienceSection({ profileData, onUpdate }) {
         }]);
     };
 
-    const removeExperience = (index) => {
+    const removeExperience = (index: number) => {
         setExperience(experience.filter((_, i) => i !== index));
     };
 
-    const updateExperience = (index, field, value) => {
+    const updateExperience = (index: number, field: keyof Experience, value: string | boolean) => {
         const updated = [...experience];
         updated[index] = { ...updated[index], [field]: value };
         setExperience(updated);

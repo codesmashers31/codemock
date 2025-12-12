@@ -3,7 +3,23 @@ import { Save, Plus, Trash2, GraduationCap } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-export default function EducationSection({ profileData, onUpdate }) {
+interface Education {
+    degree: string;
+    institution: string;
+    field: string;
+    startYear: number;
+    endYear: number | null;
+    current: boolean;
+}
+
+interface EducationSectionProps {
+    profileData: {
+        education?: Education[];
+    };
+    onUpdate: () => void;
+}
+
+export default function EducationSection({ profileData, onUpdate }: EducationSectionProps) {
     const { user } = useAuth();
     const [education, setEducation] = useState(profileData?.education || []);
     const [saving, setSaving] = useState(false);
@@ -19,11 +35,11 @@ export default function EducationSection({ profileData, onUpdate }) {
         }]);
     };
 
-    const removeEducation = (index) => {
+    const removeEducation = (index: number) => {
         setEducation(education.filter((_, i) => i !== index));
     };
 
-    const updateEducation = (index, field, value) => {
+    const updateEducation = (index: number, field: keyof Education, value: string | number | boolean | null) => {
         const updated = [...education];
         updated[index] = { ...updated[index], [field]: value };
         setEducation(updated);
