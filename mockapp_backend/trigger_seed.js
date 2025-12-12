@@ -1,8 +1,8 @@
-import http from 'http';
+import http from "http";
 
 // --- CONFIGURATION START ---
-const expertEmail = "balasudhan17@gmail.com";
-const candidateEmail = "codetalk24x7@gmail.com";
+const expertEmail = "kohsanar20@gmail.com";
+const candidateEmail = "kohsanar2011@gmail.com";
 
 // Timing Configuration
 const now = new Date();
@@ -20,38 +20,38 @@ const data = JSON.stringify({
   expertEmail,
   candidateEmail,
   startTime: startTime.toISOString(),
-  endTime: endTime.toISOString()
+  endTime: endTime.toISOString(),
 });
 
 const options = {
-  hostname: 'localhost',
-  port: 5000,
-  path: '/api/sessions/dev/seed/test-session',
-  method: 'POST',
+  hostname: "localhost",
+  port: 3000,
+  path: "/api/sessions/dev/seed/test-session",
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'Content-Length': data.length
-  }
+    "Content-Type": "application/json",
+    "Content-Length": data.length,
+  },
 };
 
 const req = http.request(options, (res) => {
   console.log(`statusCode: ${res.statusCode}`);
 
-  let responseBody = '';
+  let responseBody = "";
 
-  res.on('data', (chunk) => {
+  res.on("data", (chunk) => {
     responseBody += chunk;
   });
 
-  res.on('end', () => {
-    console.log('Response:', responseBody);
-    import('fs').then(fs => {
-      fs.writeFileSync('seed_output.json', responseBody);
+  res.on("end", () => {
+    console.log("Response:", responseBody);
+    import("fs").then((fs) => {
+      fs.writeFileSync("seed_output.json", responseBody);
     });
   });
 });
 
-req.on('error', (error) => {
+req.on("error", (error) => {
   console.error(error);
 });
 
