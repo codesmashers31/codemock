@@ -44,13 +44,17 @@ export default function attachSignaling(io) {
 
           socket.join(meetingId);
           console.log(`[Signaling] ${role} (${userId}) joined ${meetingId}`);
+          console.log(`[Signaling] Room ${meetingId} State: Expert=${room.expertSocket}, Candidate=${room.candidateSocket}`);
 
           // Emit Ready
           if (room.expertSocket && room.candidateSocket) {
+             console.log(`[Signaling] Room ${meetingId} IS FULL - Emitting both-ready`);
              io.to(meetingId).emit("both-ready", {
                 expertSocket: room.expertSocket,
                 candidateSocket: room.candidateSocket
              });
+          } else {
+             console.log(`[Signaling] Room ${meetingId} waiting for partner...`);
           }
 
        } catch (err) {

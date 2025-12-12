@@ -9,7 +9,7 @@ export default function Sessions() {
 
   const [loading, setLoading] = useState(false);
   // Hardcoded for testing the restricted flow
-  const currentUserId = "693ab0b1e22c57842f0918a7"; 
+  const currentUserId = "6936cb4d1364592217626d1a"; 
 
   useEffect(() => {
     // Fetch sessions for this specific expert ID

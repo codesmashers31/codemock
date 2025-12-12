@@ -40,6 +40,7 @@ export function useSignaling({
 
         socket.on('connect', () => {
             console.log('Connected to signaling server:', socket.id);
+            console.log(`Joining Room: ${meetingId} as ${role} (User: ${userId})`);
             socket.emit('join-room', { meetingId, role, userId });
         });
 
@@ -53,7 +54,7 @@ export function useSignaling({
         return () => {
             socket.disconnect();
         };
-    }, [meetingId, role]); // Only re-run if meetingId/role changes
+    }, [meetingId, role, userId]); // Only re-run if meetingId/role/userId changes
 
     const sendOffer = (sdp: RTCSessionDescriptionInit) => {
         socketRef.current?.emit('offer', { sdp, meetingId });

@@ -24,9 +24,12 @@ export function VideoTile({
 
   useEffect(() => {
     if (videoRef.current && stream) {
+      console.log(`[VideoTile] Attaching stream ${stream.id} to ${name} tile`);
       videoRef.current.srcObject = stream;
+    } else {
+      console.log(`[VideoTile] No stream for ${name}`);
     }
-  }, [stream]);
+  }, [stream, name]);
 
   // Generate a unique gradient based on the name
   const getGradient = (name: string) => {

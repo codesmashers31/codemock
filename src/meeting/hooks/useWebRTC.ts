@@ -43,7 +43,10 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
         // ICE Candidates
         pc.onicecandidate = (event) => {
             if (event.candidate) {
+                console.log(`Generated ICE Candidate: ${event.candidate.type} ${event.candidate.protocol}`);
                 onIceCandidateSend(event.candidate);
+            } else {
+                console.log("ICE Candidate Gathering Complete");
             }
         };
 
@@ -53,6 +56,15 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
             if (event.streams && event.streams[0]) {
                 setRemoteStream(event.streams[0]);
             }
+        };
+
+        // Monitor Connection State
+        pc.oniceconnectionstatechange = () => {
+            console.log(`ICE Connection State: ${pc.iceConnectionState}`);
+        };
+
+        pc.onconnectionstatechange = () => {
+            console.log(`Peer Connection State: ${pc.connectionState}`);
         };
 
         pcRef.current = pc;
@@ -74,16 +86,26 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
 
     // 3. Expert: Create Offer
     const createOffer = useCallback(async () => {
-        if (!localStream) {
-            console.error("No local stream to offer");
-            return null;
+        const pc = getOrCreatePeerConnection();
+
+        // Reliability: Create Data Channel to ensure ICE gathering triggers even if no media
+        const dc = pc.createDataChannel("chat");
+        dc.onopen = () => console.log("Data Channel Opened");
+
+        if (localStream) {
+            addLocalTracksToPC(pc, localStream);
+        } else {
+            console.warn("Creating offer with NO local stream (Receive Only)");
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            pc.addTransceiver('audio', { direction: 'recvonly' });
         }
 
-        const pc = getOrCreatePeerConnection();
-        addLocalTracksToPC(pc, localStream);
-
         try {
-            const offer = await pc.createOffer();
+            const offer = await pc.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
+            console.log("Offer created with SDP:", offer.sdp?.slice(0, 100) + "...");
             await pc.setLocalDescription(offer);
             return offer;
         } catch (error) {
@@ -94,13 +116,18 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
 
     // 4. Candidate: Handle Offer & Create Answer
     const handleReceivedOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
-        if (!localStream) {
-            console.error("No local stream when handling offer");
-            return null; // Should ideally wait or init, but for now strict flow expects init
-        }
-
         const pc = getOrCreatePeerConnection();
-        addLocalTracksToPC(pc, localStream);
+
+        if (localStream) {
+            addLocalTracksToPC(pc, localStream);
+        } else {
+            console.warn("Handling offer with NO local stream - adding recvonly transceivers");
+            // Critical: Must add transceivers to tell WebRTC we want to receive
+            // Check if we already have them to avoid duplicates if re-negotiating? 
+            // Simplified: Just add them, usually safe if single negotiation.
+            pc.addTransceiver('video', { direction: 'recvonly' });
+            pc.addTransceiver('audio', { direction: 'recvonly' });
+        }
 
         try {
             await pc.setRemoteDescription(new RTCSessionDescription(offer));

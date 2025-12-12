@@ -1,4 +1,5 @@
 import * as sessionService from '../services/sessionService.js';
+import * as meetingService from '../services/meetingService.js';
 
 export const getSession = async (req, res) => {
     try {
@@ -97,6 +98,8 @@ export const joinSession = async (req, res) => {
 
         // 3. Success -> Return Meeting Data
         // Ideally we create/fetch the Meeting record here
+        await meetingService.getOrCreateMeeting(session.sessionId); // Ensure Meeting doc exists
+
         // For now, we return valid signal to proceed
         res.json({
             permitted: true,

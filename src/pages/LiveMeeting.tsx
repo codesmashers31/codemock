@@ -18,9 +18,15 @@ export default function LiveMeeting() {
   
   const meetingId = searchParams.get('meetingId') || '';
   const role = (searchParams.get('role') as 'expert' | 'candidate') || 'candidate';
-  // For DEMO/DUMMY flow: Derive strict ID from role so access control works
-  // In real app, this comes from AuthContext
-  const userId = role === 'expert' ? 'expert-123' : 'candidate-456';
+  const userId = searchParams.get('userId') || '';
+  
+  // Validate Auth
+  useEffect(() => {
+     if (!userId) {
+         setAccessDenied(true);
+         setStatus("Error: Missing User ID");
+     }
+  }, [userId]);
 
   // WebRTC Hook
   const {
@@ -117,10 +123,11 @@ export default function LiveMeeting() {
         
         createOffer().then(offer => {
             if (offer) {
+                console.log("Offer created, sending via socket...");
                 sendOffer(offer);
                 setStatus("Offer sent...");
             } else {
-                console.error("Failed to create offer");
+                console.error("Failed to create offer - see useWebRTC logs");
                 hasOfferedRef.current = false; 
             }
         });
