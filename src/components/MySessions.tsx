@@ -49,6 +49,7 @@ const MySessions = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [sessionsPerPage] = useState<number>(6);
   const [showFilters, setShowFilters] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     // 1. Define Static Dummy Data (The "Booked Experts")
@@ -162,8 +163,6 @@ const MySessions = () => {
         avatarColor: "from-indigo-500 to-indigo-600"
       }
     ];
-
-    const { user } = useAuth();
 
     // 2. Fetch Dynamic Test Data & Merge
     const fetchSessions = async () => {
