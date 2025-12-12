@@ -16,13 +16,22 @@ import {
   getAvailability,
   updateAvailability,
   deleteBreakDate,
-  deleteWeeklySlot
+  deleteWeeklySlot,
+  uploadVerificationDocs,
+  uploadVerificationMiddleware, getExpertProfileImage,
+  getAllExperts,
+  getVerifiedExperts
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
 import { uploadMiddleware } from "../middleware/upload.js";
 
+
 const router = express.Router();
+
+// Public Routes
+router.get("/all-experts", getAllExperts);
+router.get("/verified", getVerifiedExperts);
 
 // Protect all expert routes
 router.use(authenticateToken);
@@ -30,6 +39,7 @@ router.use(authenticateToken);
 // Profile
 router.get("/profile", getExpertProfile);
 router.post("/profile/photo", uploadMiddleware.single("photo"), uploadProfilePhoto);
+router.get("/profile/image", getExpertProfileImage);
 
 // The rest of your expert routes (implementations must exist in controller)
 router.get("/personalinfo", getPersonalInfo);
@@ -50,5 +60,15 @@ router.get("/availability", getAvailability);
 router.put("/availability", updateAvailability);
 router.delete("/availability/delbreak", deleteBreakDate);
 router.delete("/availability/delslot", deleteWeeklySlot);
+
+// Verification
+router.put(
+  "/verification",
+  uploadVerificationMiddleware.fields([
+    { name: "companyIdFile", maxCount: 1 },
+    { name: "aadharFile", maxCount: 1 },
+  ]),
+  uploadVerificationDocs
+);
 
 export default router;

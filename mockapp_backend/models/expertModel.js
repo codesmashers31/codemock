@@ -1,4 +1,3 @@
-// models/ExpertDetails.js
 import mongoose from "mongoose";
 
 /* ----------------- Education Schema ------------------ */
@@ -45,7 +44,6 @@ const experienceSchema = new mongoose.Schema({
 /* ----------------- Availability Schema ------------------ */
 const availabilitySchema = new mongoose.Schema({
   sessionDuration: { type: Number, default: 30 },
-
   maxPerDay: { type: Number, default: 1, min: 1 },
 
   weekly: {
@@ -78,14 +76,22 @@ const availabilitySchema = new mongoose.Schema({
 const expertSchema = new mongoose.Schema(
   {
     profileImage: { type: String, trim: true },
+
     personalInformation: {
       userName: { type: String, required: true, trim: true },
       mobile: { type: String, required: true, trim: true },
-      gender: { type: String, enum: ["Male", "Female", "Other"], default:"Male", required: true, trim: true },
+      gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male", required: true, trim: true },
       dob: { type: Date, required: true },
       country: { type: String, required: true, trim: true },
       state: { type: String, required: true, trim: true },
       city: { type: String, required: true, trim: true },
+      /* 🔥 CATEGORY - Can only be set once (enforced in controller) */
+      category: {
+        type: String,
+        enum: ["IT", "HR", "Business", "Design", "Marketing", "Finance", "AI"],
+        trim: true
+        // Note: immutable flag removed - we enforce immutability in controller
+      }
     },
 
     education: {
@@ -119,14 +125,43 @@ const expertSchema = new mongoose.Schema(
     },
 
     verification: {
-      companyIdFile: { type: String, trim: true },
-      aadharFile: { type: String, trim: true },
+      companyId: {
+        url: { type: String, trim: true },
+        name: { type: String, trim: true }
+      },
+      aadhar: {
+        url: { type: String, trim: true },
+        name: { type: String, trim: true }
+      },
       linkedin: { type: String, trim: true }
+    },
+
+    /* ----------------- Pricing ------------------ */
+    pricing: {
+      hourlyRate: { type: Number, required: true, default: 500 },
+      currency: { type: String, default: "INR", trim: true },
+      customPricing: { type: Boolean, default: false } // Admin can override
+    },
+
+    /* ----------------- Metrics (Real Data) ------------------ */
+    metrics: {
+      totalSessions: { type: Number, default: 0 },
+      completedSessions: { type: Number, default: 0 },
+      cancelledSessions: { type: Number, default: 0 },
+      avgRating: { type: Number, default: 0, min: 0, max: 5 },
+      totalReviews: { type: Number, default: 0 },
+      avgResponseTime: { type: Number, default: 0 } // in hours
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "Active"],
+      default: "pending"
     },
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",   // <-- IMPORTANT: matches model name "User"
+      ref: "User",
       required: true
     }
   },

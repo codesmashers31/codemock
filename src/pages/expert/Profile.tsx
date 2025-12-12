@@ -46,9 +46,8 @@ export default function ProfilePage() {
                 <button
                   key={t.id}
                   onClick={() => setActive(t.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    active === t.id ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${active === t.id ? "bg-blue-50 text-blue-700" : "text-gray-700 hover:bg-gray-50"
+                    }`}
                 >
                   {t.label}
                 </button>

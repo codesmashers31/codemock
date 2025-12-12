@@ -6,19 +6,30 @@ import { useAuth } from '../context/AuthContext';
 const PersonalInfo = () => {
 
     const { user } = useAuth();
-      //console.log(user._id);
+    //console.log(user._id);
     const user_id = user._id
-   //console.log('th',user_id);
-   
+    //console.log('th',user_id);
+
+    const CATEGORY_OPTIONS = [
+        { value: "IT", label: "IT / Technology" },
+        { value: "HR", label: "HR & Recruiting" },
+        { value: "Business", label: "Business" },
+        { value: "Design", label: "Design" },
+        { value: "Marketing", label: "Marketing" },
+        { value: "Finance", label: "Finance" },
+        { value: "AI", label: "AI / Machine Learning" },
+    ];
+
     const initialProfile = {
         personal: {
             name: "",
             phone: "",
             gender: "",
             dob: "",
-            country: "", 
-            state: "", 
-            city: ""
+            country: "",
+            state: "",
+            city: "",
+            category: "" // Category field
         }
     };
     const [profile, setProfile] = useState(initialProfile);
@@ -48,6 +59,7 @@ const PersonalInfo = () => {
                             country: data.country || "",
                             state: data.state || "",
                             city: data.city || "",
+                            category: data.category || ""
                         }
                     });
                 }
@@ -64,34 +76,41 @@ const PersonalInfo = () => {
     // -------------------- Save (PUT / upsert) --------------------
     const savePersonal = async () => {
         try {
+            const payload = {
+                userName: profile.personal.name,
+                mobile: profile.personal.phone,
+                gender: profile.personal.gender,
+                dob: profile.personal.dob,
+                country: profile.personal.country,
+                state: profile.personal.state,
+                city: profile.personal.city,
+                category: profile.personal.category
+            };
+
+            console.log("📤 Sending personal info with category:", payload.category);
+            console.log("Full payload:", payload);
+
             const response = await axios.put(
                 `http://localhost:3000/api/expert/personalinfo`,
-                {
-                    userName: profile.personal.name,
-                    mobile: profile.personal.phone,
-                    gender: profile.personal.gender,
-                    dob: profile.personal.dob,
-                    country: profile.personal.country,
-                    state: profile.personal.state,
-                    city: profile.personal.city
-                },
+                payload,
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        userid: user
+                        userid: user_id
                     }
                 }
             );
 
             const data = response.data;
             if (data.success) {
+                console.log("✅ Server response:", data);
                 alert("Personal info updated successfully!");
             } else {
                 alert("Failed to update personal info");
             }
         } catch (err) {
             console.error(err);
-            alert("Server error");
+            alert(err.response?.data?.message || "Server error");
         }
     };
 
@@ -110,13 +129,13 @@ const PersonalInfo = () => {
                 <div className="space-y-4">
                     <Input
                         label="Full Name"
-                        placeholder="Enter your full name"
+                        placeholder="e.g. Mugunth Kumar"
                         value={profile.personal?.name || ""}
                         onChange={(v) => setPersonalField("name", v)}
                     />
                     <Input
                         label="Phone"
-                        placeholder="Enter your mobile number"
+                        placeholder="e.g. +91 98765 43210"
                         value={profile.personal?.phone || ""}
                         onChange={(v) => setPersonalField("phone", v)}
                     />
@@ -145,19 +164,49 @@ const PersonalInfo = () => {
                     />
                     <Input
                         label="Country"
+                        placeholder="e.g. India"
                         value={profile.personal?.country || ""}
                         onChange={(v) => setPersonalField("country", v)}
                     />
                     <Input
                         label="State"
+                        placeholder="e.g. Tamil Nadu"
                         value={profile.personal?.state || ""}
                         onChange={(v) => setPersonalField("state", v)}
                     />
                     <Input
                         label="City"
+                        placeholder="e.g. Chennai"
                         value={profile.personal?.city || ""}
                         onChange={(v) => setPersonalField("city", v)}
                     />
+
+                    {/* Category - One-time selection */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Category * {profile.personal?.category && <span className="text-green-600 text-xs">(Already set - cannot be changed)</span>}
+                        </label>
+                        <select
+                            className="w-full border border-gray-300 rounded-md px-3 py-2.5 
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            value={profile.personal?.category || ""}
+                            onChange={(e) => setPersonalField("category", e.target.value)}
+                            disabled={!!profile.personal?.category}
+                        >
+                            <option value="">Select category (one-time selection)</option>
+                            {CATEGORY_OPTIONS.map((cat) => (
+                                <option key={cat.value} value={cat.value}>
+                                    {cat.label}
+                                </option>
+                            ))}
+                        </select>
+                        {!profile.personal?.category && (
+                            <p className="text-xs text-amber-600 mt-1">
+                                ⚠️ Important: Category can only be set once and cannot be changed later
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 <div className="mt-6 flex justify-end">

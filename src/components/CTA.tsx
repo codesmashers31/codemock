@@ -11,7 +11,7 @@ const CTA = () => {
           <p className="text-xl mb-12 opacity-90 leading-relaxed">
             Join thousands of successful candidates who transformed their interview skills with MockHire.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Button variant="cta" size="lg" className="text-lg px-8 py-4">
               Start Practicing
@@ -20,7 +20,7 @@ const CTA = () => {
               Join as Mentor
             </Button>
           </div>
-          
+
           <div className="mt-12 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-accent">500+</div>

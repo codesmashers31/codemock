@@ -4,6 +4,7 @@ import axios from 'axios';
 
 export interface User {
   id?: string;
+  userId?: string;
   email: string;
   userType: string;
   name?: string;
@@ -75,8 +76,15 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     try {
       const response = await axios.get('http://localhost:3000/api/auth/profile');
       const userData: User = response.data.user;
-      setUser(userData);
-      return userData;
+
+      // Normalize userId or _id to id for consistency
+      const normalizedUser = {
+        ...userData,
+        id: userData.userId || (userData as any)._id || userData.id,
+      };
+
+      setUser(normalizedUser);
+      return normalizedUser;
     } catch (error: any) {
       if (error?.response?.status === 401) {
         // invalid token — clear everything
@@ -94,12 +102,18 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
       const { token: newToken, user: userData } = response.data;
       if (!newToken || !userData) throw new Error('Invalid response from server');
 
+      // Normalize userId to id for consistency
+      const normalizedUser = {
+        ...userData,
+        id: userData.userId || userData.id,
+      };
+
       localStorage.setItem('token', newToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       setToken(newToken);
-      setUser(userData);
+      setUser(normalizedUser);
       setIsLoading(false);
-      return userData;
+      return normalizedUser;
     } catch (error: any) {
       const msg = error?.response?.data?.message || error?.message || 'Login failed';
       throw new Error(msg);

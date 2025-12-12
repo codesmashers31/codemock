@@ -15,7 +15,11 @@ interface Notification {
 
 export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const { user, logout } = useAuth();
+
+  //console.log(user);
+
   const navigate = useNavigate();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -33,7 +37,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     if (!user) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`/api/notifications`); // <-- adapt if required
+      const res = await axios.get(`http://localhost:3000/api/notifications`); // <-- adapt if required
       // expect res.data.notifications: Notification[]
       setNotifications(res.data.notifications || []);
     } catch (err) {
@@ -79,7 +83,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     try {
       // optimistic update
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-      await axios.post(`/api/notifications/${id}/read`); // adapt to your backend
+      await axios.post(`http://localhost:3000/api/notifications/${id}/read`); // adapt to your backend
     } catch (err) {
       console.error("Failed to mark notification read", err);
       // rollback if needed - simple approach: refetch
@@ -91,7 +95,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
   const markAllAsRead = async () => {
     try {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      await axios.post(`/api/notifications/mark-all-read`); // adapt to your backend
+      await axios.post(`http://localhost:3000/api/notifications/mark-all-read`); // adapt to your backend
     } catch (err) {
       console.error("Failed to mark all read", err);
       fetchNotifications();
@@ -103,6 +107,38 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     logout();
     navigate("/signin", { replace: true });
   };
+
+  useEffect(() => {
+    if (!user) {
+      setAvatarUrl(null);
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/api/expert/profile");
+
+        console.log(res.data.profile.photoUrl);
+
+
+        if (res.data?.success) {
+          const url = res.data.profile?.photoUrl || "";
+
+
+
+          setAvatarUrl(url || null);
+        } else {
+          setAvatarUrl(null);
+        }
+      } catch (err) {
+        console.error("Failed to load expert profile", err);
+        setAvatarUrl(null);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
 
   // Small helper to render icons
   const getNotificationIcon = (type: Notification["type"]) => {
@@ -134,7 +170,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     }
   };
 
-  const avatarSrc = user?.avatar || "/avatar-placeholder.png";
+  const avatarSrc = avatarUrl || "./mocki_log.png";
 
   return (
     <header className="w-full bg-white border-b border-gray-200 p-3 flex items-center justify-between sticky top-0 z-50">
@@ -221,12 +257,11 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
                   notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 hover:bg-gray-50 border-l-4 ${
-                        notification.read ? "border-transparent" :
+                      className={`px-4 py-3 hover:bg-gray-50 border-l-4 ${notification.read ? "border-transparent" :
                         notification.type === "success" ? "border-green-500" :
-                        notification.type === "warning" ? "border-yellow-500" :
-                        notification.type === "error" ? "border-red-500" : "border-blue-500"
-                      }`}
+                          notification.type === "warning" ? "border-yellow-500" :
+                            notification.type === "error" ? "border-red-500" : "border-blue-500"
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-0.5">{getNotificationIcon(notification.type)}</div>
