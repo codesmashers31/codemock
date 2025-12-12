@@ -2,14 +2,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video } from 'lucide-react';
+import { useAuth } from "../context/AuthContext";
 
 export default function Sessions() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<any[]>([]);
 
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState(false);
   // Hardcoded for testing the restricted flow
-  const currentUserId = "693ab0b1e22c57842f0918a7"; 
+  const currentUserId = user?.id || ""; 
 
   useEffect(() => {
     // Fetch sessions for this specific expert ID

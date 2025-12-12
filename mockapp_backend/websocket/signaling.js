@@ -61,11 +61,14 @@ export default function attachSignaling(io) {
 
           // Emit Ready
           if (room.expertSocket && room.candidateSocket) {
-             console.log(`[Signaling] Room ${meetingId} IS FULL - Emitting both-ready`);
-             io.to(meetingId).emit("both-ready", {
-                expertSocket: room.expertSocket,
-                candidateSocket: room.candidateSocket
-             });
+             console.log(`[Signaling] Room ${meetingId} IS FULL - Emitting both-ready in 2s...`);
+             // Increased delay to 2000ms to ensure client stability
+             setTimeout(() => {
+                 io.to(meetingId).emit("both-ready", {
+                    expertSocket: room.expertSocket,
+                    candidateSocket: room.candidateSocket
+                 });
+             }, 2000);
           } else {
              console.log(`[Signaling] Room ${meetingId} waiting for partner...`);
           }
@@ -92,6 +95,7 @@ export default function attachSignaling(io) {
     });
 
     socket.on("ice-candidate", (payload) => {
+      console.log(`[Signaling] Relaying ICE candidate from ${socket.id} to ${payload.meetingId}`);
       socket.to(payload.meetingId).emit("ice-candidate", { 
         candidate: payload.candidate, 
         caller: socket.id 

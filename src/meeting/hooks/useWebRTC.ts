@@ -4,6 +4,9 @@ const STUN_SERVERS = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
     ],
 };
 
@@ -73,13 +76,16 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
 
     // Helper: Add Tracks to PC
     const addLocalTracksToPC = useCallback((pc: RTCPeerConnection, stream: MediaStream) => {
+        console.log("Adding local tracks to PeerConnection. Stream ID:", stream.id);
         stream.getTracks().forEach((track) => {
             // Check if track already exists to avoid duplication
             const senders = pc.getSenders();
             const exists = senders.some(s => s.track === track);
             if (!exists) {
-                console.log(`Adding ${track.kind} track to PC`);
+                console.log(`Adding ${track.kind} track to PC (ID: ${track.id})`);
                 pc.addTrack(track, stream);
+            } else {
+                console.log(`Track ${track.kind} (ID: ${track.id}) already exists in PC`);
             }
         });
     }, []);
@@ -117,14 +123,14 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
     // 4. Candidate: Handle Offer & Create Answer
     const handleReceivedOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
         const pc = getOrCreatePeerConnection();
+        console.log("Handle Received Offer. Has Local Stream:", !!localStream);
 
         if (localStream) {
             addLocalTracksToPC(pc, localStream);
         } else {
             console.warn("Handling offer with NO local stream - adding recvonly transceivers");
             // Critical: Must add transceivers to tell WebRTC we want to receive
-            // Check if we already have them to avoid duplicates if re-negotiating? 
-            // Simplified: Just add them, usually safe if single negotiation.
+            // But if candidate HAS a stream (e.g. mic/cam), they MUST add it here for Expert to see them.
             pc.addTransceiver('video', { direction: 'recvonly' });
             pc.addTransceiver('audio', { direction: 'recvonly' });
         }

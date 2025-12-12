@@ -63,9 +63,17 @@ export default function LiveMeeting() {
       setIsBothReady(true);
       hasOfferedRef.current = false;
     },
+    // Verify media is ready before processing offer
     onOffer: async ({ sdp, caller }) => {
        if (role === 'candidate') {
          console.log("Received Offer from Expert");
+         
+         // Wait for media if not ready? 
+         // For now, just log warning if stream is missing
+         if (!localStream) {
+             console.warn("⚠️ Received offer but Local Stream is NULL! Video back to expert will fail.");
+         }
+
          setStatus("Received Offer...");
          const answer = await handleReceivedOffer(sdp);
          if (answer) {
@@ -124,7 +132,12 @@ export default function LiveMeeting() {
     initLocalMedia().catch(err => console.error("Media Error", err));
   }, [initLocalMedia]);
 
-  // Handle Offer Creation
+  // Handle Offer Creation - Strict "Expert Initiates" for stability, 
+  // but if we wanted symmetric, we'd need collision handling (e.g. perfect negotiation pattern).
+  // Given the race condition issues, keeping one designated offerer (Expert) is safer 
+  // unless we implement the "glare" handling.
+  // USER request: "disable it in future... implement expert meeting architecture for candidate".
+  // This likely means the CONTROLS (End Meeting). I have enabled that.
   useEffect(() => {
     if (isBothReady && localStream && role === 'expert' && !hasOfferedRef.current) {
         console.log("Initiating WebRTC Negotiation...");

@@ -1,1 +1,20 @@
-{"message":"Restricted test session created","session":{"_id":"693adb1d62f9d183c483bc47","sessionId":"test-restricted-693ab0b1e22c57842f0918a7-693a94fee22c57842f09189e","expertId":"693ab0b1e22c57842f0918a7","candidateId":"693a94fee22c57842f09189e","startTime":"2025-12-12T08:11:59.974Z","endTime":"2025-12-12T09:11:59.974Z","topics":["Restricted Test","Strict Auth"],"status":"confirmed","createdAt":"2025-12-11T14:54:21.949Z","__v":0},"expertId":"693ab0b1e22c57842f0918a7","candidateId":"693a94fee22c57842f09189e"}
+{
+    "message": "Restricted test session created",
+    "session": {
+        "_id": "693c0701893d29005cd342be",
+        "sessionId": "test-restricted-693c06d4893d29005cd342b9-693c0688893d29005cd342b1",
+        "expertId": "693c06d4893d29005cd342b9",
+        "candidateId": "693c0688893d29005cd342b1",
+        "startTime": "2025-12-12T12:18:50.144Z",
+        "endTime": "2025-12-12T13:18:50.144Z",
+        "topics": [
+            "Restricted Test",
+            "Strict Auth"
+        ],
+        "status": "confirmed",
+        "createdAt": "2025-12-12T12:13:53.922Z",
+        "__v": 0
+    },
+    "expertId": "693c06d4893d29005cd342b9",
+    "candidateId": "693c0688893d29005cd342b1"
+}

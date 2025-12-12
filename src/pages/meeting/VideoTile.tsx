@@ -26,10 +26,14 @@ export function VideoTile({
 
   useEffect(() => {
     if (videoRef.current && stream) {
-      console.log(`[VideoTile] Attaching stream ${stream.id} to ${name} tile`);
+      console.log(`[VideoTile] Directly assigning stream ${stream.id} to video element for ${name}`);
       videoRef.current.srcObject = stream;
-    } else {
-      console.log(`[VideoTile] No stream for ${name}`);
+      videoRef.current.onloadedmetadata = () => {
+          console.log(`[VideoTile] Metadata loaded for ${name}, attempting to play`);
+          videoRef.current?.play().catch(e => console.error(`[VideoTile] Play error for ${name}:`, e));
+      };
+    } else if (!stream) {
+      console.log(`[VideoTile] No stream to attach for ${name}`);
     }
   }, [stream, name]);
 

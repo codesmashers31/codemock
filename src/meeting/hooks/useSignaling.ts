@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SIGNALING_SERVER_URL = 'http://localhost:3000';
+const SIGNALING_SERVER_URL = 'http://192.168.31.11:3000';
 
 interface UseSignalingProps {
     meetingId: string;
@@ -28,6 +28,23 @@ export function useSignaling({
 }: UseSignalingProps) {
     const socketRef = useRef<Socket | null>(null);
 
+    // Keep callbacks fresh in refs to avoid stale closures in socket listeners
+    const onOfferRef = useRef(onOffer);
+    const onAnswerRef = useRef(onAnswer);
+    const onIceCandidateRef = useRef(onIceCandidate);
+    const onBothReadyRef = useRef(onBothReady);
+    const onUserLeftRef = useRef(onUserLeft);
+    const onMeetingEndedRef = useRef(onMeetingEnded);
+
+    useEffect(() => {
+        onOfferRef.current = onOffer;
+        onAnswerRef.current = onAnswer;
+        onIceCandidateRef.current = onIceCandidate;
+        onBothReadyRef.current = onBothReady;
+        onUserLeftRef.current = onUserLeft;
+        onMeetingEndedRef.current = onMeetingEnded;
+    }, [onOffer, onAnswer, onIceCandidate, onBothReady, onUserLeft, onMeetingEnded]);
+
     useEffect(() => {
         if (!meetingId || !userId) {
             console.warn('[useSignaling] Missing meetingId or userId - skipping connection', { meetingId, userId });
@@ -47,17 +64,18 @@ export function useSignaling({
             socket.emit('join-room', { meetingId, role, userId });
         });
 
-        socket.on('offer', onOffer);
-        socket.on('answer', onAnswer);
-        socket.on('ice-candidate', onIceCandidate);
-        socket.on('both-ready', onBothReady);
-        socket.on('user-left', onUserLeft);
-        socket.on('meeting-ended', onMeetingEnded);
+        // Use wrapper functions that call the current ref
+        socket.on('offer', (data) => onOfferRef.current(data));
+        socket.on('answer', (data) => onAnswerRef.current(data));
+        socket.on('ice-candidate', (data) => onIceCandidateRef.current(data));
+        socket.on('both-ready', () => onBothReadyRef.current());
+        socket.on('user-left', (id) => onUserLeftRef.current(id));
+        socket.on('meeting-ended', () => onMeetingEndedRef.current());
 
         return () => {
             socket.disconnect();
         };
-    }, [meetingId, role, userId]); // Only re-run if meetingId/role/userId changes
+    }, [meetingId, role, userId]); // Stable dependencies
 
     const sendOffer = (sdp: RTCSessionDescriptionInit) => {
         socketRef.current?.emit('offer', { sdp, meetingId });

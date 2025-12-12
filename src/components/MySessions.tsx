@@ -18,6 +18,7 @@ import {
 import Navigation from "./Navigation";
 import BottomNav from "./BottomNav";
 import Footer from "./Footer";
+import { useAuth } from "../context/AuthContext";
 
 type Session = {
   id: number;
@@ -162,11 +163,13 @@ const MySessions = () => {
       }
     ];
 
+    const { user } = useAuth();
+
     // 2. Fetch Dynamic Test Data & Merge
     const fetchSessions = async () => {
         try {
             // Restricted Candidate ID
-            const candidateId = "693a94fee22c57842f09189e";
+            const candidateId = user?.id || "";
             const res = await fetch(`http://localhost:3000/api/sessions/user/${candidateId}/role/candidate`);
             const data = await res.json();
             
