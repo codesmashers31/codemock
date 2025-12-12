@@ -150,6 +150,25 @@ export const uploadProfilePhoto = async (req, res) => {
   }
 };
 
+export const getExpertProfileImage = async (req, res) => {
+  try {
+    const userIdRaw = req.user?.id || req.user?._id;
+    if (!userIdRaw) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const expert = await ExpertDetails.findOne({ userId: userIdRaw }).lean();
+
+    const image = expert?.profileImage || "";
+
+    return res.json({ success: true, image });
+  } catch (err) {
+    console.error("getExpertProfileImage error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 /* -------------------- uploadVerificationDocs -------------------- */
 export const uploadVerificationDocs = async (req, res) => {
   try {
@@ -233,7 +252,8 @@ export const getExpertProfile = async (req, res) => {
       availability: expert.availability || { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
       verification: expert.verification || {},
       status: expert.status || "pending",
-      photoUrl: expert.profileImage || ""
+      photoUrl: expert.profileImage || "",
+      category: expert.personalInformation?.category || ""
     };
 
     const completion = computeCompletion(expert);
@@ -267,34 +287,75 @@ export const getPersonalInfo = async (req, res) => {
   }
 };
 
-/* -------------------- updatePersonalInfo (safe upsert) -------------------- */
 export const updatePersonalInfo = async (req, res) => {
   try {
     const userIdRaw = resolveUserIdFromReq(req);
     if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized: user id missing" });
     const queryUserId = toObjectId(userIdRaw);
 
-    const { userName = "", mobile = "", gender = "Male", dob = null, country = "", state = "", city = "" } = req.body;
+    const { userName = "", mobile = "", gender = "Male", dob = null, country = "", state = "", city = "", category = "" } = req.body;
 
-    const personalObj = {
-      userName: (userName || "").toString().trim(),
-      mobile: (mobile || "").toString().trim(),
-      gender,
-      dob,
-      country: (country || "").toString().trim(),
-      state: (state || "").toString().trim(),
-      city: (city || "").toString().trim()
+    console.log("📥 Received updatePersonalInfo request");
+    console.log("   Category from request body:", category);
+    console.log("   User ID:", queryUserId);
+
+    // First, check if expert exists and if category is being changed
+    const existingExpert = await ExpertDetails.findOne({ userId: queryUserId });
+
+    if (existingExpert) {
+      console.log("   Existing category:", existingExpert.personalInformation?.category);
+    } else {
+      console.log("   No existing expert found - will create new");
+    }
+
+    if (existingExpert && existingExpert.personalInformation?.category && category && existingExpert.personalInformation.category !== category) {
+      // Category already set and trying to change it
+      console.log("❌ Attempt to change category from", existingExpert.personalInformation.category, "to", category);
+      return res.status(400).json({
+        success: false,
+        message: "Category has already been set and cannot be changed"
+      });
+    }
+
+    // Build update object using $set for nested fields
+    const updateObj = {
+      "personalInformation.userName": (userName || "").toString().trim(),
+      "personalInformation.mobile": (mobile || "").toString().trim(),
+      "personalInformation.gender": gender,
+      "personalInformation.dob": dob,
+      "personalInformation.country": (country || "").toString().trim(),
+      "personalInformation.state": (state || "").toString().trim(),
+      "personalInformation.city": (city || "").toString().trim(),
+      userId: queryUserId
     };
+
+    // Only add category if it's provided and valid
+    if (category) {
+      const allowedCategories = ["IT", "HR", "Business", "Design", "Marketing", "Finance", "AI"];
+      if (allowedCategories.includes(category)) {
+        updateObj["personalInformation.category"] = category;
+        console.log("🔥 Adding category to update:", category);
+      } else {
+        console.log("⚠️ Invalid category:", category);
+      }
+    } else {
+      console.log("⚠️ No category provided in request");
+    }
+
+    console.log("💾 Update object:", JSON.stringify(updateObj, null, 2));
 
     const expert = await ExpertDetails.findOneAndUpdate(
       { userId: queryUserId },
-      { personalInformation: personalObj, userId: queryUserId },
+      { $set: updateObj },
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
+    console.log("✅ Personal info saved!");
+    console.log("   Final category in DB:", expert.personalInformation?.category);
+
     return res.status(200).json({ success: true, message: "Personal info updated successfully", data: expert });
   } catch (error) {
-    console.error("updatePersonalInfo error:", error);
+    console.error("❌ updatePersonalInfo error:", error);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -474,6 +535,7 @@ export const updateSkillsAndExpertise = async (req, res) => {
     const queryUserId = toObjectId(userIdRaw);
 
     const skills = req.body.skillsAndExpertise;
+
     if (!skills) return res.status(400).json({ success: false, message: "skillsAndExpertise is required in body" });
 
     const { mode, domains, tools, languages } = skills;
@@ -493,6 +555,7 @@ export const updateSkillsAndExpertise = async (req, res) => {
     if (Array.isArray(languages)) expert.skillsAndExpertise.languages = languages;
 
     await expert.save({ validateBeforeSave: false });
+    console.log("✅ Expert saved successfully");
     return res.status(200).json({ success: true, message: "Skills updated", data: expert.skillsAndExpertise });
   } catch (err) {
     console.error("updateSkillsAndExpertise error:", err);
@@ -600,3 +663,124 @@ export const deleteWeeklySlot = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+/* -------------------- getVerifiedExperts (Active experts only) -------------------- */
+export const getVerifiedExperts = async (req, res) => {
+  try {
+    const { category } = req.query;
+
+    // Build query - only active experts
+    const query = { status: "Active" };
+
+    // Optional category filter
+    if (category && category !== "all") {
+      query["personalInformation.category"] = category;
+    }
+
+    const experts = await ExpertDetails.find(query).lean();
+
+    console.log(`📊 Found ${experts.length} active experts`);
+
+    // Return complete expert data for frontend processing
+    const formatted = experts.map(expert => {
+      console.log(`\n👤 Expert: ${expert.personalInformation?.userName}`);
+      console.log(`   - Category: ${expert.personalInformation?.category}`);
+      console.log(`   - Title: ${expert.professionalDetails?.title}`);
+      console.log(`   - Company: ${expert.professionalDetails?.company}`);
+      console.log(`   - Profile Image: ${expert.profileImage}`);
+      console.log(`   - Location: ${expert.personalInformation?.city}, ${expert.personalInformation?.state}`);
+      console.log(`   - Hourly Rate: ₹${expert.pricing?.hourlyRate || 500}/hr`);
+      console.log(`   - Avg Rating: ${expert.metrics?.avgRating || 0}`);
+      console.log(`   - Total Reviews: ${expert.metrics?.totalReviews || 0}`);
+
+      return {
+        _id: expert._id,
+        userId: expert.userId,
+        profileImage: expert.profileImage || "",
+        personalInformation: {
+          userName: expert.personalInformation?.userName || "",
+          mobile: expert.personalInformation?.mobile || "",
+          gender: expert.personalInformation?.gender || "",
+          dob: expert.personalInformation?.dob || null,
+          country: expert.personalInformation?.country || "",
+          state: expert.personalInformation?.state || "",
+          city: expert.personalInformation?.city || "",
+          category: expert.personalInformation?.category || "IT"
+        },
+        professionalDetails: {
+          title: expert.professionalDetails?.title || "",
+          company: expert.professionalDetails?.company || "",
+          totalExperience: expert.professionalDetails?.totalExperience || 0,
+          industry: expert.professionalDetails?.industry || "",
+          previous: expert.professionalDetails?.previous || []
+        },
+        skillsAndExpertise: {
+          mode: expert.skillsAndExpertise?.mode || "Online",
+          domains: expert.skillsAndExpertise?.domains || [],
+          tools: expert.skillsAndExpertise?.tools || [],
+          languages: expert.skillsAndExpertise?.languages || []
+        },
+        availability: {
+          sessionDuration: expert.availability?.sessionDuration || 30,
+          maxPerDay: expert.availability?.maxPerDay || 1,
+          weekly: expert.availability?.weekly || {},
+          breakDates: expert.availability?.breakDates || []
+        },
+        pricing: {
+          hourlyRate: expert.pricing?.hourlyRate || 500,
+          currency: expert.pricing?.currency || "INR",
+          customPricing: expert.pricing?.customPricing || false
+        },
+        metrics: {
+          totalSessions: expert.metrics?.totalSessions || 0,
+          completedSessions: expert.metrics?.completedSessions || 0,
+          cancelledSessions: expert.metrics?.cancelledSessions || 0,
+          avgRating: expert.metrics?.avgRating || 0,
+          totalReviews: expert.metrics?.totalReviews || 0,
+          avgResponseTime: expert.metrics?.avgResponseTime || 0
+        },
+        status: expert.status || "Active"
+      };
+    });
+
+    console.log(`\n✅ Returning ${formatted.length} formatted experts\n`);
+
+    return res.json({ success: true, data: formatted });
+
+  } catch (err) {
+    console.error("getVerifiedExperts error:", err);
+    return res.status(500).json({ success: false, message: "Internal error" });
+  }
+};
+
+/* -------------------- getAllExperts (Public Listing) -------------------- */
+export const getAllExperts = async (req, res) => {
+  try {
+    const experts = await ExpertDetails.find().lean();
+
+    const formatted = experts.map(expert => ({
+      id: expert._id,
+      name: expert.personalInformation?.userName || "",
+      role: expert.professionalDetails?.title || "",
+      experience: (expert.professionalDetails?.totalExperience || 0) + " yrs",
+      skills: expert.skillsAndExpertise?.languages || [],
+      rating: 4.8,
+      price: "₹499",
+      category: expert.category, // ⭐ IMPORTANT
+      company: expert.professionalDetails?.company || "",
+      avatar: expert.profileImage || "",
+      location: expert.personalInformation?.city || "",
+      reviews: 32,
+      responseTime: "1 hour",
+      successRate: 92,
+      isVerified: true
+    }));
+
+    return res.json({ success: true, data: formatted });
+
+  } catch (err) {
+    console.error("getAllExperts error:", err);
+    return res.status(500).json({ success: false, message: "Internal error" });
+  }
+};
+

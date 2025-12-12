@@ -1,12 +1,27 @@
-import { useState, useRef } from "react";
-import { 
-  ChevronLeft, ChevronRight, Star, MapPin, Clock, 
-  Users, Shield, TrendingUp, Briefcase, Code, 
-  PenTool, BarChart3, DollarSign, Brain, Heart
+import { useState, useRef, useEffect } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  MapPin,
+  Clock,
+  Users,
+  Shield,
+  TrendingUp,
+  Briefcase,
+  Code,
+  PenTool,
+  BarChart3,
+  DollarSign,
+  Brain,
+  Heart,
+  Award,
+  Mail,
+  Calendar,
+  CheckCircle
 } from "lucide-react";
-
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
 
 // Types
 type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | "AI";
@@ -15,758 +30,24 @@ interface Profile {
   id: string;
   name: string;
   role: string;
-  experience: string;
-  skills: string[];
-  rating: number;
-  price: string;
+  industry: string;
   category: Category;
-  company: string;
   avatar: string;
   location: string;
+  experience: string;
+  skills: string[];
+  languages: string[];
+  mode: string;
+  rating: number;
   reviews: number;
+  price: string;
   responseTime: string;
   successRate: number;
   isVerified: boolean;
   isFeatured?: boolean;
+  availableTime?: string;
+  company?: string;
 }
-
-// Data - Expanded for better display
-const profiles: Profile[] = [
-  // IT Profiles
-  {
-    id: "it-1",
-    name: "Rajesh Kumar",
-    role: "Full Stack Developer",
-    experience: "6 years",
-    skills: ["React", "Node.js", "System Design"],
-    rating: 4.8,
-    price: "₹399",
-    category: "IT",
-    company: "Microsoft",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
-    location: "Hyderabad",
-    reviews: 189,
-    responseTime: "1 hour",
-    successRate: 92,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "it-2",
-    name: "Alok Mehta",
-    role: "Cloud Architect",
-    experience: "7 years",
-    skills: ["AWS", "Azure", "DevOps"],
-    rating: 4.9,
-    price: "₹449",
-    category: "IT",
-    company: "Amazon",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 210,
-    responseTime: "2 hours",
-    successRate: 94,
-    isVerified: true
-  },
-  {
-    id: "it-3",
-    name: "Priya Patel",
-    role: "DevOps Engineer",
-    experience: "5 years",
-    skills: ["Docker", "Kubernetes", "CI/CD"],
-    rating: 4.7,
-    price: "₹379",
-    category: "IT",
-    company: "Google",
-    avatar: "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=150&h=150&fit=crop",
-    location: "Pune",
-    reviews: 156,
-    responseTime: "3 hours",
-    successRate: 91,
-    isVerified: true
-  },
-  {
-    id: "it-4",
-    name: "Amit Sharma",
-    role: "Data Scientist",
-    experience: "6 years",
-    skills: ["Python", "ML", "TensorFlow"],
-    rating: 4.8,
-    price: "₹429",
-    category: "IT",
-    company: "Meta",
-    avatar: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop",
-    location: "Delhi",
-    reviews: 178,
-    responseTime: "2 hours",
-    successRate: 93,
-    isVerified: true
-  },
-  {
-    id: "it-5",
-    name: "Neha Gupta",
-    role: "Backend Developer",
-    experience: "5 years",
-    skills: ["Java", "Spring", "Microservices"],
-    rating: 4.7,
-    price: "₹359",
-    category: "IT",
-    company: "Uber",
-    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 145,
-    responseTime: "4 hours",
-    successRate: 89,
-    isVerified: true
-  },
-  {
-    id: "it-6",
-    name: "Vikram Singh",
-    role: "Mobile Developer",
-    experience: "6 years",
-    skills: ["React Native", "Flutter", "iOS"],
-    rating: 4.8,
-    price: "₹389",
-    category: "IT",
-    company: "Flipkart",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 167,
-    responseTime: "3 hours",
-    successRate: 92,
-    isVerified: true
-  },
-
-  // HR Profiles
-  {
-    id: "hr-1",
-    name: "Sarah Johnson",
-    role: "Senior Technical Recruiter",
-    experience: "8 years",
-    skills: ["Technical Hiring", "Behavioral", "Leadership"],
-    rating: 4.9,
-    price: "₹299",
-    category: "HR",
-    company: "Google",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 234,
-    responseTime: "2 hours",
-    successRate: 95,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "hr-2",
-    name: "David Kim",
-    role: "HR Director",
-    experience: "10 years",
-    skills: ["Leadership", "Culture", "Strategy"],
-    rating: 4.8,
-    price: "₹499",
-    category: "HR",
-    company: "Apple",
-    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 201,
-    responseTime: "3 hours",
-    successRate: 94,
-    isVerified: true
-  },
-  {
-    id: "hr-3",
-    name: "Anjali Reddy",
-    role: "Talent Acquisition Lead",
-    experience: "7 years",
-    skills: ["Sourcing", "Screening", "Onboarding"],
-    rating: 4.7,
-    price: "₹329",
-    category: "HR",
-    company: "Microsoft",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop",
-    location: "Hyderabad",
-    reviews: 189,
-    responseTime: "2 hours",
-    successRate: 92,
-    isVerified: true
-  },
-  {
-    id: "hr-4",
-    name: "Rahul Verma",
-    role: "HR Business Partner",
-    experience: "6 years",
-    skills: ["HRBP", "Employee Relations", "Policy"],
-    rating: 4.6,
-    price: "₹279",
-    category: "HR",
-    company: "Amazon",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop",
-    location: "Pune",
-    reviews: 145,
-    responseTime: "4 hours",
-    successRate: 90,
-    isVerified: true
-  },
-  {
-    id: "hr-5",
-    name: "Meera Nair",
-    role: "Recruitment Manager",
-    experience: "8 years",
-    skills: ["Campus Hiring", "Lateral", "Assessment"],
-    rating: 4.8,
-    price: "₹349",
-    category: "HR",
-    company: "Infosys",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 178,
-    responseTime: "3 hours",
-    successRate: 93,
-    isVerified: true
-  },
-  {
-    id: "hr-6",
-    name: "Karan Malhotra",
-    role: "People Operations",
-    experience: "5 years",
-    skills: ["HR Operations", "Benefits", "Payroll"],
-    rating: 4.7,
-    price: "₹299",
-    category: "HR",
-    company: "Swiggy",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 134,
-    responseTime: "2 hours",
-    successRate: 91,
-    isVerified: true
-  },
-
-  // Business Profiles
-  {
-    id: "bus-1",
-    name: "Michael Chen",
-    role: "Business Consultant",
-    experience: "10 years",
-    skills: ["Strategy", "Analysis", "Operations"],
-    rating: 4.8,
-    price: "₹449",
-    category: "Business",
-    company: "McKinsey",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 201,
-    responseTime: "4 hours",
-    successRate: 91,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "bus-2",
-    name: "Simran Dhawan",
-    role: "Business Analyst",
-    experience: "6 years",
-    skills: ["Finance", "Reporting", "Analysis"],
-    rating: 4.7,
-    price: "₹329",
-    category: "Business",
-    company: "BCG",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop",
-    location: "Delhi",
-    reviews: 167,
-    responseTime: "3 hours",
-    successRate: 89,
-    isVerified: true
-  },
-  {
-    id: "bus-3",
-    name: "Arjun Kapoor",
-    role: "Product Manager",
-    experience: "8 years",
-    skills: ["Product Strategy", "Roadmap", "Agile"],
-    rating: 4.9,
-    price: "₹479",
-    category: "Business",
-    company: "Google",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 223,
-    responseTime: "2 hours",
-    successRate: 95,
-    isVerified: true
-  },
-  {
-    id: "bus-4",
-    name: "Kavya Iyer",
-    role: "Operations Manager",
-    experience: "7 years",
-    skills: ["Operations", "Process", "Efficiency"],
-    rating: 4.6,
-    price: "₹349",
-    category: "Business",
-    company: "Amazon",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop",
-    location: "Hyderabad",
-    reviews: 156,
-    responseTime: "4 hours",
-    successRate: 88,
-    isVerified: true
-  },
-  {
-    id: "bus-5",
-    name: "Rohan Desai",
-    role: "Strategy Consultant",
-    experience: "9 years",
-    skills: ["Corporate Strategy", "M&A", "Growth"],
-    rating: 4.8,
-    price: "₹499",
-    category: "Business",
-    company: "Bain",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 189,
-    responseTime: "5 hours",
-    successRate: 93,
-    isVerified: true
-  },
-  {
-    id: "bus-6",
-    name: "Tanvi Shah",
-    role: "Business Development",
-    experience: "5 years",
-    skills: ["Sales", "Partnerships", "Growth"],
-    rating: 4.7,
-    price: "₹319",
-    category: "Business",
-    company: "Flipkart",
-    avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 145,
-    responseTime: "3 hours",
-    successRate: 90,
-    isVerified: true
-  },
-
-  // Design Profiles
-  {
-    id: "des-1",
-    name: "Priya Sharma",
-    role: "UX/UI Designer",
-    experience: "7 years",
-    skills: ["Figma", "User Research", "Prototyping"],
-    rating: 4.9,
-    price: "₹349",
-    category: "Design",
-    company: "Adobe",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop",
-    location: "Pune",
-    reviews: 198,
-    responseTime: "3 hours",
-    successRate: 94,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "des-2",
-    name: "Alex Turner",
-    role: "Product Designer",
-    experience: "6 years",
-    skills: ["Design Systems", "UX", "Accessibility"],
-    rating: 4.8,
-    price: "₹379",
-    category: "Design",
-    company: "Spotify",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 167,
-    responseTime: "2 hours",
-    successRate: 92,
-    isVerified: true
-  },
-  {
-    id: "des-3",
-    name: "Sneha Reddy",
-    role: "Visual Designer",
-    experience: "5 years",
-    skills: ["Brand Design", "Illustration", "Animation"],
-    rating: 4.7,
-    price: "₹299",
-    category: "Design",
-    company: "Netflix",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 134,
-    responseTime: "4 hours",
-    successRate: 89,
-    isVerified: true
-  },
-  {
-    id: "des-4",
-    name: "Karthik Menon",
-    role: "Interaction Designer",
-    experience: "8 years",
-    skills: ["Prototyping", "Animation", "Micro-interactions"],
-    rating: 4.8,
-    price: "₹399",
-    category: "Design",
-    company: "Google",
-    avatar: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop",
-    location: "Hyderabad",
-    reviews: 178,
-    responseTime: "3 hours",
-    successRate: 93,
-    isVerified: true
-  },
-  {
-    id: "des-5",
-    name: "Riya Joshi",
-    role: "Design Lead",
-    experience: "9 years",
-    skills: ["Team Management", "Strategy", "Mentoring"],
-    rating: 4.9,
-    price: "₹449",
-    category: "Design",
-    company: "Apple",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 210,
-    responseTime: "4 hours",
-    successRate: 95,
-    isVerified: true
-  },
-  {
-    id: "des-6",
-    name: "Aditya Kumar",
-    role: "UI Developer",
-    experience: "4 years",
-    skills: ["HTML/CSS", "React", "Animations"],
-    rating: 4.6,
-    price: "₹279",
-    category: "Design",
-    company: "Zomato",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop",
-    location: "Delhi",
-    reviews: 123,
-    responseTime: "2 hours",
-    successRate: 88,
-    isVerified: true
-  },
-
-  // Marketing Profiles
-  {
-    id: "mar-1",
-    name: "Anjali Verma",
-    role: "Marketing Strategist",
-    experience: "6 years",
-    skills: ["SEO", "Content", "Analytics"],
-    rating: 4.8,
-    price: "₹329",
-    category: "Marketing",
-    company: "Amazon",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
-    location: "Delhi",
-    reviews: 178,
-    responseTime: "2 hours",
-    successRate: 93,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "mar-2",
-    name: "James Carter",
-    role: "Digital Marketing Lead",
-    experience: "8 years",
-    skills: ["Paid Ads", "Social Media", "Email"],
-    rating: 4.9,
-    price: "₹399",
-    category: "Marketing",
-    company: "Google",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 201,
-    responseTime: "3 hours",
-    successRate: 95,
-    isVerified: true
-  },
-  {
-    id: "mar-3",
-    name: "Pooja Singh",
-    role: "Content Marketing",
-    experience: "5 years",
-    skills: ["Content Strategy", "Writing", "SEO"],
-    rating: 4.7,
-    price: "₹289",
-    category: "Marketing",
-    company: "HubSpot",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop",
-    location: "Pune",
-    reviews: 145,
-    responseTime: "4 hours",
-    successRate: 90,
-    isVerified: true
-  },
-  {
-    id: "mar-4",
-    name: "Sanjay Patel",
-    role: "Growth Marketing",
-    experience: "7 years",
-    skills: ["Growth Hacking", "Analytics", "A/B Testing"],
-    rating: 4.8,
-    price: "₹379",
-    category: "Marketing",
-    company: "Uber",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 167,
-    responseTime: "3 hours",
-    successRate: 92,
-    isVerified: true
-  },
-  {
-    id: "mar-5",
-    name: "Divya Nair",
-    role: "Brand Manager",
-    experience: "6 years",
-    skills: ["Brand Strategy", "Positioning", "Creative"],
-    rating: 4.7,
-    price: "₹349",
-    category: "Marketing",
-    company: "Coca-Cola",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop",
-    location: "Hyderabad",
-    reviews: 156,
-    responseTime: "4 hours",
-    successRate: 91,
-    isVerified: true
-  },
-  {
-    id: "mar-6",
-    name: "Vikram Rao",
-    role: "Performance Marketing",
-    experience: "5 years",
-    skills: ["PPC", "Facebook Ads", "ROI"],
-    rating: 4.6,
-    price: "₹299",
-    category: "Marketing",
-    company: "Swiggy",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 134,
-    responseTime: "2 hours",
-    successRate: 89,
-    isVerified: true
-  },
-
-  // Finance Profiles
-  {
-    id: "fin-1",
-    name: "David Kim",
-    role: "Financial Analyst",
-    experience: "9 years",
-    skills: ["Valuation", "Modeling", "Investment"],
-    rating: 4.9,
-    price: "₹499",
-    category: "Finance",
-    company: "Goldman Sachs",
-    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 223,
-    responseTime: "3 hours",
-    successRate: 96,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "fin-2",
-    name: "Neha Agarwal",
-    role: "Investment Banker",
-    experience: "10 years",
-    skills: ["M&A", "Due Diligence", "Valuation"],
-    rating: 4.8,
-    price: "₹599",
-    category: "Finance",
-    company: "Morgan Stanley",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 198,
-    responseTime: "5 hours",
-    successRate: 95,
-    isVerified: true
-  },
-  {
-    id: "fin-3",
-    name: "Rahul Chopra",
-    role: "Risk Analyst",
-    experience: "7 years",
-    skills: ["Risk Management", "Compliance", "Audit"],
-    rating: 4.7,
-    price: "₹399",
-    category: "Finance",
-    company: "HSBC",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop",
-    location: "Pune",
-    reviews: 167,
-    responseTime: "4 hours",
-    successRate: 92,
-    isVerified: true
-  },
-  {
-    id: "fin-4",
-    name: "Priya Desai",
-    role: "Financial Planner",
-    experience: "6 years",
-    skills: ["Wealth Management", "Planning", "Tax"],
-    rating: 4.6,
-    price: "₹349",
-    category: "Finance",
-    company: "ICICI",
-    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop",
-    location: "Mumbai",
-    reviews: 145,
-    responseTime: "3 hours",
-    successRate: 90,
-    isVerified: true
-  },
-  {
-    id: "fin-5",
-    name: "Arjun Khanna",
-    role: "Credit Analyst",
-    experience: "5 years",
-    skills: ["Credit Analysis", "Lending", "Underwriting"],
-    rating: 4.7,
-    price: "₹329",
-    category: "Finance",
-    company: "Citibank",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop",
-    location: "Delhi",
-    reviews: 134,
-    responseTime: "4 hours",
-    successRate: 91,
-    isVerified: true
-  },
-  {
-    id: "fin-6",
-    name: "Shreya Menon",
-    role: "Portfolio Manager",
-    experience: "8 years",
-    skills: ["Portfolio Management", "Equity", "Bonds"],
-    rating: 4.8,
-    price: "₹449",
-    category: "Finance",
-    company: "BlackRock",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
-    location: "Bengaluru",
-    reviews: 178,
-    responseTime: "4 hours",
-    successRate: 93,
-    isVerified: true
-  },
-
-  // AI Profiles
-  {
-    id: "ai-1",
-    name: "AI Interview Pro",
-    role: "Smart AI Coach",
-    experience: "24/7",
-    skills: ["Real-time Feedback", "Voice Analysis", "Tips"],
-    rating: 4.9,
-    price: "₹199",
-    category: "AI",
-    company: "MockAI",
-    avatar: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=150&h=150&fit=crop",
-    location: "Online",
-    reviews: 892,
-    responseTime: "Instant",
-    successRate: 97,
-    isVerified: true,
-    isFeatured: true
-  },
-  {
-    id: "ai-2",
-    name: "Tech Interview AI",
-    role: "Technical AI Assistant",
-    experience: "Always On",
-    skills: ["Code Review", "DSA", "System Design"],
-    rating: 4.8,
-    price: "₹249",
-    category: "AI",
-    company: "CodeAI",
-    avatar: "https://images.unsplash.com/photo-1677442135136-760cbba4ab01?w=150&h=150&fit=crop",
-    location: "Online",
-    reviews: 745,
-    responseTime: "Instant",
-    successRate: 95,
-    isVerified: true
-  },
-  {
-    id: "ai-3",
-    name: "Behavioral AI Coach",
-    role: "HR Interview AI",
-    experience: "Unlimited",
-    skills: ["Behavioral", "Communication", "Confidence"],
-    rating: 4.7,
-    price: "₹179",
-    category: "AI",
-    company: "InterviewBot",
-    avatar: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=150&h=150&fit=crop",
-    location: "Online",
-    reviews: 623,
-    responseTime: "Instant",
-    successRate: 93,
-    isVerified: true
-  },
-  {
-    id: "ai-4",
-    name: "Design AI Mentor",
-    role: "Design Review AI",
-    experience: "24/7",
-    skills: ["Portfolio Review", "Feedback", "Tips"],
-    rating: 4.6,
-    price: "₹199",
-    category: "AI",
-    company: "DesignAI",
-    avatar: "https://images.unsplash.com/photo-1677442135136-760cbba4ab01?w=150&h=150&fit=crop",
-    location: "Online",
-    reviews: 534,
-    responseTime: "Instant",
-    successRate: 91,
-    isVerified: true
-  },
-  {
-    id: "ai-5",
-    name: "Business AI Coach",
-    role: "Case Study AI",
-    experience: "Always Active",
-    skills: ["Case Studies", "Analysis", "Strategy"],
-    rating: 4.8,
-    price: "₹229",
-    category: "AI",
-    company: "BusinessAI",
-    avatar: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=150&h=150&fit=crop",
-    location: "Online",
-    reviews: 678,
-    responseTime: "Instant",
-    successRate: 94,
-    isVerified: true
-  },
-  {
-    id: "ai-6",
-    name: "Marketing AI Pro",
-    role: "Marketing Strategy AI",
-    experience: "24/7",
-    skills: ["Campaign Analysis", "Strategy", "ROI"],
-    rating: 4.7,
-    price: "₹189",
-    category: "AI",
-    company: "MarketAI",
-    avatar: "https://images.unsplash.com/photo-1677442135136-760cbba4ab01?w=150&h=150&fit=crop",
-    location: "Online",
-    reviews: 567,
-    responseTime: "Instant",
-    successRate: 92,
-    isVerified: true
-  }
-];
 
 const getCategoryIcon = (category: Category) => {
   const icons = {
@@ -784,136 +65,209 @@ const getCategoryIcon = (category: Category) => {
 // Profile Card Component
 const ProfileCard = ({ profile }: { profile: Profile }) => {
   const [liked, setLiked] = useState(false);
-   const navigate = useNavigate();
+  const navigate = useNavigate();
 
-     const handleBookNow = () => {
+  const handleBookNow = () => {
     navigate(`/book-session/${profile.name}`, {
-      state: {
-        profile // Pass the full profile object; you can customize fields as needed
-      }
+      state: { profile }
     });
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 h-full flex flex-col">
-      {/* Header */}
-      <div className="p-3 border-b border-gray-100">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <img 
-              src={profile.avatar} 
-              alt={profile.name}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-semibold text-gray-900 text-sm truncate">{profile.name}</h3>
-                {profile.isVerified && (
-                  <Shield className="w-3 h-3 text-blue-500 shrink-0" />
-                )}
+    <div className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 h-full flex flex-col overflow-hidden border border-gray-200 hover:border-gray-300">
+      {/* Header Section */}
+      <div className="relative p-6 bg-gradient-to-r from-gray-800 to-gray-900">
+        <div className="flex items-start gap-4">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg">
+              <img
+                src={profile.avatar}
+                alt={profile.name}
+                className="w-full h-full rounded-full object-cover"
+              />
+            </div>
+            {profile.isVerified && (
+              <div className="absolute -bottom-1 -right-1 bg-green-600 rounded-full p-1.5 shadow border-2 border-white">
+                <Shield className="w-4 h-4 text-white" />
               </div>
-              <p className="text-xs text-gray-600 truncate">{profile.company}</p>
+            )}
+          </div>
+
+          {/* Name and Experience */}
+          <div className="flex-1 min-w-0 pt-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-bold text-xl text-white truncate">
+                {profile.name}
+              </h3>
+            </div>
+
+            {/* Industry | Title Badge */}
+            <div className="mb-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 text-white text-xs font-semibold rounded-full">
+                {profile.industry} | {profile.role}
+              </span>
+            </div>
+
+            {/* Experience */}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 text-white text-xs font-semibold rounded-full">
+                <Briefcase className="w-3 h-3" />
+                {profile.experience}
+              </span>
             </div>
           </div>
-          <button 
-            onClick={() => setLiked(!liked)}
-            className="p-1 hover:bg-gray-50 rounded-full transition-colors shrink-0"
-          >
-            <Heart 
-              className={`w-3.5 h-3.5 ${liked ? "fill-red-500 text-red-500" : "text-gray-400"}`}
-            />
-          </button>
-        </div>
-
-        <p className="text-xs text-gray-700 font-medium mb-1.5 truncate">{profile.role}</p>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <Briefcase className="w-3 h-3" />
-            {profile.experience}
-          </span>
-          <span>•</span>
-          <span className="flex items-center gap-1 truncate">
-            <MapPin className="w-3 h-3" />
-            {profile.location}
-          </span>
         </div>
       </div>
 
-      {/* Skills */}
-      <div className="px-3 py-2 border-b border-gray-100">
-        <div className="flex flex-wrap gap-1">
-          {profile.skills.map((skill, idx) => (
-            <span 
+      {/* Location */}
+      <div className="px-6 pt-4 pb-3">
+        <div className="flex items-center gap-2 text-sm">
+          <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <span className="font-medium text-gray-700">{profile.location}</span>
+        </div>
+      </div>
+
+      {/* Availability */}
+      <div className="px-6 pb-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <span className="font-medium text-gray-700">{profile.availableTime}</span>
+        </div>
+      </div>
+
+      {/* Company & Role */}
+      <div className="px-6 pb-4">
+        <div className="flex items-center gap-2 text-sm">
+          <Briefcase className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <span className="font-medium text-gray-700">{profile.company} | {profile.role}</span>
+        </div>
+      </div>
+
+      {/* Skills Section */}
+      <div className="px-6 pb-4">
+        <p className="text-xs font-semibold text-gray-500 mb-2">Skills</p>
+        <div className="flex flex-wrap gap-2">
+          {profile.skills.slice(0, 4).map((skill, idx) => (
+            <span
               key={idx}
-              className="px-1.5 py-0.5 bg-gray-50 text-gray-700 text-xs rounded border border-gray-200 truncate"
+              className="px-3 py-1.5 bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg border border-gray-200"
             >
               {skill}
             </span>
           ))}
+          {profile.skills.length > 4 && (
+            <span className="px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-lg">
+              +{profile.skills.length - 4} more
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="px-3 py-2 border-b border-gray-100 grow">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <div className="flex items-center justify-center gap-0.5 text-yellow-500 mb-0.5">
-              <Star className="w-3 h-3 fill-current" />
-              <span className="text-xs font-semibold text-gray-900">{profile.rating}</span>
-            </div>
-            <p className="text-xs text-gray-500">{profile.reviews}</p>
+      {/* Languages Section */}
+      {profile.languages && profile.languages.length > 0 && (
+        <div className="px-6 pb-4">
+          <p className="text-xs font-semibold text-gray-500 mb-2">Languages</p>
+          <div className="flex flex-wrap gap-2">
+            {profile.languages.slice(0, 3).map((language, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200"
+              >
+                {language}
+              </span>
+            ))}
+            {profile.languages.length > 3 && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-500 text-xs font-medium rounded">
+                +{profile.languages.length - 3} more
+              </span>
+            )}
           </div>
-          <div>
-            <div className="flex items-center justify-center gap-0.5 text-green-500 mb-0.5">
-              <TrendingUp className="w-3 h-3" />
-              <span className="text-xs font-semibold text-gray-900">{profile.successRate}%</span>
+        </div>
+      )}
+
+      {/* Stats Section */}
+      <div className="px-6 pb-5">
+        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          {/* Rating */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1.5">
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              <span className="text-sm font-semibold text-gray-900">
+                {profile.rating > 0 ? profile.rating.toFixed(1) : "New"}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">{profile.reviews} reviews</p>
+          </div>
+
+          {/* Success Rate */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1.5">
+              <TrendingUp className="w-4 h-4 text-green-600" />
+              <span className="text-sm font-semibold text-gray-900">
+                {profile.successRate}%
+              </span>
             </div>
             <p className="text-xs text-gray-500">Success</p>
           </div>
-          <div>
-            <div className="flex items-center justify-center gap-0.5 text-blue-500 mb-0.5">
-              <Clock className="w-3 h-3" />
-              <span className="text-xs font-semibold text-gray-900 truncate">{profile.responseTime}</span>
+
+          {/* Mode */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1 mb-1.5">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-semibold text-gray-900">
+                {profile.mode}
+              </span>
             </div>
-            <p className="text-xs text-gray-500">Time</p>
+            <p className="text-xs text-gray-500">Mode</p>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-3 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-gray-500">Session</p>
-          <p className="text-base font-bold text-gray-900">{profile.price}</p>
+      {/* Footer with Price and Book Button */}
+      <div className="px-6 pb-6 mt-auto">
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div>
+            <p className="text-xs text-gray-500 font-medium mb-1">Session Price</p>
+            <p className="text-xl font-bold text-gray-900">{profile.price}</p>
+          </div>
+          <button
+            className="px-6 py-3 bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200"
+            onClick={handleBookNow}
+          >
+            Book Now
+          </button>
         </div>
-         <button
-          className="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded transition-colors"
-          onClick={handleBookNow}
-        >
-          Book Now
-        </button>
       </div>
     </div>
   );
 };
 
 // Carousel Component
-const Carousel = ({ title, category }: { title: string; category: Category }) => {
+const Carousel = ({
+  title,
+  category,
+  profiles
+}: {
+  title: string;
+  category: Category;
+  profiles: Profile[];
+}) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const filteredProfiles = profiles.filter(p => p.category === category);
+  const filteredProfiles = profiles.filter((p) => p.category === category);
   const Icon = getCategoryIcon(category);
 
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const cardWidth = 240;
-      const gap = 12;
+      const cardWidth = 384;
+      const gap = 16;
       const scrollAmount = (cardWidth + gap) * 2;
       scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
       });
     }
   };
@@ -927,43 +281,48 @@ const Carousel = ({ title, category }: { title: string; category: Category }) =>
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gray-100 rounded">
-            <Icon className="w-4 h-4 text-gray-700" />
+    <div className="mb-12">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-gray-800 rounded-lg shadow-sm">
+            <Icon className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500">{filteredProfiles.length} coaches</p>
+            <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+            <p className="text-sm text-gray-600 mt-0.5">
+              {filteredProfiles.length} expert{filteredProfiles.length !== 1 ? "s" : ""} available
+            </p>
           </div>
         </div>
-        
-        <div className="flex gap-1.5">
+
+        {/* Navigation Buttons */}
+        <div className="flex gap-2">
           <button
-            onClick={() => scroll('left')}
+            onClick={() => scroll("left")}
             disabled={!canScrollLeft}
-            className="p-1.5 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-2.5 rounded-lg bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <ChevronLeft className="w-4 h-4 text-gray-700" />
+            <ChevronLeft className="w-5 h-5 text-gray-700" />
           </button>
           <button
-            onClick={() => scroll('right')}
+            onClick={() => scroll("right")}
             disabled={!canScrollRight}
-            className="p-1.5 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-2.5 rounded-lg bg-white border border-gray-300 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <ChevronRight className="w-4 h-4 text-gray-700" />
+            <ChevronRight className="w-5 h-5 text-gray-700" />
           </button>
         </div>
       </div>
 
-      <div 
+      {/* Cards Carousel */}
+      <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-3 overflow-x-auto scrollbar-hide"
+        className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
       >
-        {filteredProfiles.map(profile => (
-          <div key={profile.id} className="flex-none w-60">
+        {filteredProfiles.map((profile) => (
+          <div key={profile.id} className="flex-none w-96">
             <ProfileCard profile={profile} />
           </div>
         ))}
@@ -972,8 +331,154 @@ const Carousel = ({ title, category }: { title: string; category: Category }) =>
   );
 };
 
+// Helper function to calculate age from date of birth
+const calculateAge = (dob: string) => {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age;
+};
+
+// Helper function to calculate professional experience
+const calculateProfessionalExperience = (professionalDetails: any) => {
+  if (!professionalDetails?.previous || professionalDetails.previous.length === 0) {
+    return null; // Return null if no work history
+  }
+
+  // Get the earliest start date from all previous experiences
+  let totalMonths = 0;
+  const today = new Date();
+
+  professionalDetails.previous.forEach((job: any) => {
+    if (job.start) {
+      const startDate = new Date(job.start);
+      const endDate = job.end ? new Date(job.end) : today;
+
+      const months = (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+        (endDate.getMonth() - startDate.getMonth());
+      totalMonths += months;
+    }
+  });
+
+  const years = Math.floor(totalMonths / 12);
+
+  if (years <= 0) return "Less than 1 year";
+  if (years === 1) return "1 year";
+  return `${years}+ years`;
+};
+
+// Helper function to get current or most recent company
+const getCurrentCompany = (professionalDetails: any, category: string) => {
+  if (!professionalDetails?.previous || professionalDetails.previous.length === 0) {
+    // If no work history, use current company field or default
+    if (professionalDetails?.company) {
+      return professionalDetails.company;
+    }
+    return `${category} Consultant`;
+  }
+
+  // Find current job (no end date) or most recent job
+  const currentJob = professionalDetails.previous.find((job: any) => !job.endDate);
+  if (currentJob?.company) {
+    return currentJob.company;
+  }
+
+  // Get most recent job
+  const sortedJobs = [...professionalDetails.previous].sort((a: any, b: any) => {
+    const dateA = a.end ? new Date(a.end) : new Date();
+    const dateB = b.end ? new Date(b.end) : new Date();
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  return sortedJobs[0]?.company || professionalDetails?.company || `${category} Consultant`;
+};
+
+// Helper function to get job title/role
+const getJobTitle = (professionalDetails: any, category: string) => {
+  // Check if there's a current title
+  if (professionalDetails?.title) {
+    return professionalDetails.title;
+  }
+
+  if (!professionalDetails?.previous || professionalDetails.previous.length === 0) {
+    return `${category} Expert`;
+  }
+
+  // Find current job or most recent job
+  const currentJob = professionalDetails.previous.find((job: any) => !job.end);
+  if (currentJob?.title) {
+    return currentJob.title;
+  }
+
+  const sortedJobs = [...professionalDetails.previous].sort((a: any, b: any) => {
+    const dateA = a.end ? new Date(a.end) : new Date();
+    const dateB = b.end ? new Date(b.end) : new Date();
+    return dateB.getTime() - dateA.getTime();
+  });
+
+  return sortedJobs[0]?.title || `${category} Expert`;
+};
+
+// Helper function to format availability
+const formatAvailability = (availability: any) => {
+  if (!availability) return "Flexible Hours";
+
+  const duration = availability.sessionDuration || 30;
+  const maxPerDay = availability.maxPerDay || 1;
+
+  return `${duration} min sessions, up to ${maxPerDay}/day`;
+};
+
+// Helper function to calculate price based on experience
+const calculatePrice = (experience: string, category: string) => {
+  // Base prices by category (in Rupees)
+  const basePrices: { [key: string]: number } = {
+    IT: 500,
+    HR: 400,
+    Business: 600,
+    Design: 450,
+    Marketing: 400,
+    Finance: 550,
+    AI: 700
+  };
+
+  const basePrice = basePrices[category] || 500;
+
+  // Adjust based on experience
+  if (experience.includes("Fresher") || experience.includes("Less than")) {
+    return `₹${basePrice - 100}/hr`;
+  } else if (experience.includes("1 year") || experience.includes("2 year")) {
+    return `₹${basePrice}/hr`;
+  } else {
+    // Extract years if possible
+    const yearsMatch = experience.match(/(\d+)\+/);
+    if (yearsMatch) {
+      const years = parseInt(yearsMatch[1]);
+      if (years >= 10) {
+        return `₹${basePrice + 300}/hr`;
+      } else if (years >= 5) {
+        return `₹${basePrice + 200}/hr`;
+      } else {
+        return `₹${basePrice + 100}/hr`;
+      }
+    }
+  }
+
+  return `₹${basePrice}/hr`;
+};
+
 // Main Component
 export default function MockInterviewPlatform() {
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const categories: { id: Category; name: string }[] = [
     { id: "IT", name: "Technology" },
     { id: "HR", name: "HR & Recruiting" },
@@ -981,26 +486,226 @@ export default function MockInterviewPlatform() {
     { id: "Design", name: "Design" },
     { id: "Marketing", name: "Marketing" },
     { id: "Finance", name: "Finance" },
-    { id: "AI", name: "AI Interviews" }
+    { id: "AI", name: "AI & ML" }
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-   
+  // Fetch verified experts on mount
+  useEffect(() => {
+    const fetchExperts = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get("http://localhost:3000/api/expert/verified");
 
- 
-    
+        if (response.data?.success && response.data?.data) {
+          // Map database data to Profile interface
+          const mappedProfiles: Profile[] = response.data.data.map((expert: any) => {
+            console.log("📦 Expert data:", expert);
+
+            // Get category
+            const category = expert.personalInformation?.category || "IT";
+
+            // Calculate experience - Priority order:
+            // 1. totalExperience field (manually entered)
+            // 2. Work history calculation
+            // 3. DOB calculation
+            let experience = "";
+
+            // First check if totalExperience is set
+            if (expert.professionalDetails?.totalExperience && expert.professionalDetails.totalExperience > 0) {
+              const years = expert.professionalDetails.totalExperience;
+              if (years === 1) {
+                experience = "1 year";
+              } else {
+                experience = `${years} years`;
+              }
+            } else {
+              // Try work history calculation
+              const workExperience = calculateProfessionalExperience(expert.professionalDetails);
+
+              if (workExperience) {
+                experience = workExperience;
+              } else if (expert.personalInformation?.dob) {
+                // Fall back to DOB calculation
+                const age = calculateAge(expert.personalInformation.dob);
+                const yearsExp = Math.max(0, age - 22);
+                if (yearsExp === 0) {
+                  experience = "Fresher";
+                } else if (yearsExp === 1) {
+                  experience = "1 year";
+                } else {
+                  experience = `${yearsExp}+ years`;
+                }
+              } else {
+                experience = "Experienced Professional";
+              }
+            }
+
+            console.log("✅ Calculated experience:", experience);
+
+            // Get current or most recent company
+            const company = getCurrentCompany(expert.professionalDetails, category);
+            console.log("🏢 Company:", company);
+
+            // Get job title/role
+            const role = getJobTitle(expert.professionalDetails, category);
+            console.log("💼 Role:", role);
+
+            // Get skills from domains and tools
+            const skills = [
+              ...(expert.skillsAndExpertise?.domains || []),
+              ...(expert.skillsAndExpertise?.tools || [])
+            ].map((skill: string) =>
+              skill.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+            );
+
+            // Get languages
+            const languages = (expert.skillsAndExpertise?.languages || []).map((lang: string) =>
+              lang.charAt(0).toUpperCase() + lang.slice(1)
+            );
+
+            // Format availability
+            const availableTime = formatAvailability(expert.availability);
+
+            // Get session mode (Online/Offline)
+            const mode = expert.skillsAndExpertise?.mode || "Online";
+
+            // Build location string
+            const city = expert.personalInformation?.city || "";
+            const state = expert.personalInformation?.state || "";
+            const country = expert.personalInformation?.country || "";
+            let location = mode;
+            if (city && state) {
+              location = `${city}, ${state}`;
+            } else if (state) {
+              location = state;
+            } else if (country) {
+              location = country;
+            }
+
+            // Calculate price based on experience
+            const price = expert.pricing?.hourlyRate
+              ? `₹${expert.pricing.hourlyRate}/hr`
+              : calculatePrice(experience, category);
+
+            // Get real metrics or show defaults
+            const rating = expert.metrics?.avgRating || 0;
+            const reviews = expert.metrics?.totalReviews || 0;
+            const successRate = expert.metrics?.totalSessions > 0
+              ? Math.round((expert.metrics.completedSessions / expert.metrics.totalSessions) * 100)
+              : 0;
+            const responseTime = expert.metrics?.avgResponseTime > 0
+              ? `${Math.round(expert.metrics.avgResponseTime)} hours`
+              : 'New expert';
+
+            // Get industry
+            const industry = expert.professionalDetails?.industry || category;
+
+            // Create profile object from database data
+            return {
+              id: expert._id || expert.userId || Math.random().toString(),
+              name: expert.personalInformation?.userName || "Expert",
+              role: role,
+              industry: industry,
+              experience: experience,
+              skills: skills.length > 0 ? skills : ["Interview Coaching", "Career Guidance"],
+              rating: rating,
+              price: price,
+              category: category as Category,
+              company: company,
+              avatar: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
+              location: location,
+              mode: mode,
+              reviews: reviews,
+              responseTime: responseTime,
+              successRate: successRate,
+              isVerified: expert.status === "Active",
+              isFeatured: Math.random() > 0.75, // 25% chance of being featured
+              availableTime: availableTime,
+              languages: languages
+            };
+          });
+
+          setAllProfiles(mappedProfiles);
+        }
+      } catch (err) {
+        console.error("Error fetching experts:", err);
+        setError("Failed to load experts. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExperts();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-[1600px] mx-auto px-8 py-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Mock Interview Experts</h1>
+            <p className="text-gray-600 mt-2">Book sessions with verified professionals</p>
+          </div>
+        </div>
+      </header>
 
       {/* Content */}
-      <main className="max-w-[1920px] mx-auto px-6 py-6">
-        {categories.map(cat => (
-          <Carousel 
-            key={cat.id}
-            title={cat.name}
-            category={cat.id}
-          />
-        ))}
+      <main className="max-w-[1600px] mx-auto px-8 py-8">
+        {loading && (
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-800 border-t-transparent"></div>
+            <p className="text-gray-700 mt-4 font-medium">Loading experts...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-20">
+            <div className="inline-block p-4 bg-red-50 rounded-full mb-4">
+              <CheckCircle className="w-12 h-12 text-red-600" />
+            </div>
+            <p className="text-red-600 text-lg font-semibold">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && allProfiles.length === 0 && (
+          <div className="text-center py-20">
+            <div className="inline-block p-4 bg-gray-100 rounded-full mb-4">
+              <Users className="w-12 h-12 text-gray-400" />
+            </div>
+            <p className="text-gray-700 text-lg font-semibold">No experts available</p>
+            <p className="text-gray-500 mt-2">Please check back later for available experts.</p>
+          </div>
+        )}
+
+        {/* Show carousels only for categories that have experts */}
+        {!loading && !error && allProfiles.length > 0 && categories
+          .filter(cat => allProfiles.some(profile => profile.category === cat.id))
+          .map(cat => (
+            <Carousel
+              key={cat.id}
+              title={cat.name}
+              category={cat.id}
+              profiles={allProfiles}
+            />
+          ))}
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 mt-12">
+        <div className="max-w-[1600px] mx-auto px-8 py-6">
+          <div className="text-center text-gray-600 text-sm">
+            <p>© 2024 Mock Interview Platform. All rights reserved.</p>
+            <p className="mt-1">Professional interview preparation with verified experts</p>
+          </div>
+        </div>
+      </footer>
 
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {

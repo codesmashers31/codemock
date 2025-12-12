@@ -18,13 +18,20 @@ import {
   deleteBreakDate,
   deleteWeeklySlot,
   uploadVerificationDocs,
-  uploadVerificationMiddleware
+  uploadVerificationMiddleware, getExpertProfileImage,
+  getAllExperts,
+  getVerifiedExperts
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
 import { uploadMiddleware } from "../middleware/upload.js";
 
+
 const router = express.Router();
+
+// Public Routes
+router.get("/all-experts", getAllExperts);
+router.get("/verified", getVerifiedExperts);
 
 // Protect all expert routes
 router.use(authenticateToken);
@@ -32,6 +39,7 @@ router.use(authenticateToken);
 // Profile
 router.get("/profile", getExpertProfile);
 router.post("/profile/photo", uploadMiddleware.single("photo"), uploadProfilePhoto);
+router.get("/profile/image", getExpertProfileImage);
 
 // The rest of your expert routes (implementations must exist in controller)
 router.get("/personalinfo", getPersonalInfo);
