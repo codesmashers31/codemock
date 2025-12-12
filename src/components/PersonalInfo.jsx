@@ -129,13 +129,13 @@ const PersonalInfo = () => {
                 <div className="space-y-4">
                     <Input
                         label="Full Name"
-                        placeholder="Enter your full name"
+                        placeholder="e.g. Mugunth Kumar"
                         value={profile.personal?.name || ""}
                         onChange={(v) => setPersonalField("name", v)}
                     />
                     <Input
                         label="Phone"
-                        placeholder="Enter your mobile number"
+                        placeholder="e.g. +91 98765 43210"
                         value={profile.personal?.phone || ""}
                         onChange={(v) => setPersonalField("phone", v)}
                     />
@@ -164,16 +164,19 @@ const PersonalInfo = () => {
                     />
                     <Input
                         label="Country"
+                        placeholder="e.g. India"
                         value={profile.personal?.country || ""}
                         onChange={(v) => setPersonalField("country", v)}
                     />
                     <Input
                         label="State"
+                        placeholder="e.g. Tamil Nadu"
                         value={profile.personal?.state || ""}
                         onChange={(v) => setPersonalField("state", v)}
                     />
                     <Input
                         label="City"
+                        placeholder="e.g. Chennai"
                         value={profile.personal?.city || ""}
                         onChange={(v) => setPersonalField("city", v)}
                     />

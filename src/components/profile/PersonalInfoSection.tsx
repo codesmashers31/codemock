@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Save, Upload } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
+import { Country, State, City } from "country-state-city";
 
 interface PersonalInfo {
     phone?: string;
@@ -38,8 +39,45 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
 
+    // Get all countries
+    const countries = useMemo(() => {
+        return Country.getAllCountries();
+    }, []);
+
+    // Get states based on selected country
+    const states = useMemo(() => {
+        if (!formData.country || formData.country === "Other") return [];
+        const countryCode = countries.find(c => c.name === formData.country)?.isoCode;
+        return countryCode ? State.getStatesOfCountry(countryCode) : [];
+    }, [formData.country, countries]);
+
+    // Get cities based on selected state
+    const cities = useMemo(() => {
+        if (!formData.country || !formData.state || formData.state === "Other") return [];
+        const countryCode = countries.find(c => c.name === formData.country)?.isoCode;
+        const stateCode = states.find(s => s.name === formData.state)?.isoCode;
+        return countryCode && stateCode ? City.getCitiesOfState(countryCode, stateCode) : [];
+    }, [formData.country, formData.state, countries, states]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === "country") {
+            setFormData(prev => ({
+                ...prev,
+                country: value,
+                state: "", // Reset state
+                city: ""   // Reset city
+            }));
+        } else if (name === "state") {
+            setFormData(prev => ({
+                ...prev,
+                state: value,
+                city: ""   // Reset city
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSave = async () => {
@@ -137,7 +175,7 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
                         value={formData.phone}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="+1 (555) 123-4567"
+                        placeholder="+91 98765 43210"
                     />
                 </div>
 
@@ -169,38 +207,58 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                    <input
-                        type="text"
+                    <select
                         name="country"
                         value={formData.country}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="United States"
-                    />
+                    >
+                        <option value="">Select Country</option>
+                        {countries.map((c) => (
+                            <option key={c.isoCode} value={c.name}>
+                                {c.name}
+                            </option>
+                        ))}
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                    <input
-                        type="text"
+                    <select
                         name="state"
                         value={formData.state}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="California"
-                    />
+                        disabled={!formData.country}
+                    >
+                        <option value="">{formData.country ? "Select State" : "Select Country First"}</option>
+                        {states.map((s) => (
+                            <option key={s.isoCode} value={s.name}>
+                                {s.name}
+                            </option>
+                        ))}
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                    <input
-                        type="text"
+                    <select
                         name="city"
                         value={formData.city}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                        placeholder="San Francisco"
-                    />
+                        disabled={!formData.state}
+                    >
+                        <option value="">{formData.state ? "Select City" : "Select State First"}</option>
+                        {cities.map((c) => (
+                            <option key={c.name} value={c.name}>
+                                {c.name}
+                            </option>
+                        ))}
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
             </div>
 
