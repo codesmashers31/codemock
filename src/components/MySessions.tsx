@@ -210,7 +210,7 @@ const MySessions = () => {
   }, []);
 
   const handleJoinMeeting = async (session: any) => {
-    const candidateId = "693a94fee22c57842f09189e";  
+    const candidateId = user?.id || "";  
     try {
         const res = await fetch(`http://localhost:3000/api/sessions/${session.sessionId}/join`, {
             method: 'POST',
