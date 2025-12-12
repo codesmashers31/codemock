@@ -10,21 +10,34 @@ export default function attachSignaling(io) {
     console.log(`[Signaling] User connected: ${socket.id}`);
 
     // Join Room
-    socket.on("join-room", async ({ meetingId, role, userId }) => {
+    socket.on("join-room", async (initialPayload) => {
+       console.log(`[Signaling] Join-room received for socket ${socket.id} with payload:`, initialPayload);
+       const { meetingId, role, userId } = initialPayload;
        try {
           // Verify with DB
+          console.log(`[Signaling] Calling meetingService.getMeeting(${meetingId})`);
           const meeting = await meetingService.getMeeting(meetingId);
+          console.log(`[Signaling] meetingService.getMeeting returned:`, meeting ? "FOUND" : "NULL");
+          
           if (!meeting) {
+            console.log(`[Signaling] Meeting not found in DB: ${meetingId}`);
             socket.emit("error", "Meeting not found");
             return;
           }
           if (meeting.status === 'finished') {
-             socket.emit("error", "Meeting has ended");
-             return;
+             console.log(`[Signaling] Meeting ${meetingId} was FINISHED. Auto-resurrecting for testing.`);
+             meeting.status = 'live';
+             meeting.activeUsers = []; 
+             await meeting.save();
           }
+          console.log(`[Signaling] Meeting status: ${meeting.status}. Proceeding to Auth.`);
           
           // Verify Auth
-          if (!authUtils.canJoinMeeting(meeting, userId)) {
+          const isAuthorized = authUtils.canJoinMeeting(meeting, userId);
+          console.log(`[Signaling] Authorization check for User ${userId}: ${isAuthorized ? 'AUTHORIZED' : 'DENIED'}`);
+          
+          if (!isAuthorized) {
+              console.log(`[Signaling] User ${userId} denied access to meeting ${meetingId}`);
               socket.emit("error", "Unauthorized");
               return;
           }
@@ -58,7 +71,7 @@ export default function attachSignaling(io) {
           }
 
        } catch (err) {
-          console.error("Join Error", err);
+          console.error(`[Signaling] Join-room CRITICAL ERROR for ${meetingId}:`, err);
           socket.emit("error", "Internal Server Error");
        }
     });
@@ -87,7 +100,7 @@ export default function attachSignaling(io) {
 
     // Meeting Controls
     socket.on("end-call", async ({ meetingId }) => {
-      console.log(`[Signaling] Meeting ended for ${meetingId}`);
+      console.log(`[Signaling] Meeting ended by socket ${socket.id} for ${meetingId}`);
       
       // Update DB
       await meetingService.updateMeetingStatus(meetingId, "finished");

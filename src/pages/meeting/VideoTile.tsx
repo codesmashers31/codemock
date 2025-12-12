@@ -9,6 +9,7 @@ interface VideoTileProps {
   micEnabled?: boolean;
   stream?: MediaStream | null;
   muted?: boolean; // Explicit control
+  className?: string; // Allow custom styling
 }
 
 export function VideoTile({ 
@@ -18,7 +19,8 @@ export function VideoTile({
   cameraEnabled = true,
   micEnabled = true,
   stream,
-  muted = false
+  muted = false,
+  className = ""
 }: VideoTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -56,6 +58,7 @@ export function VideoTile({
         transition-all duration-300
         ${isMainTile ? 'shadow-[0_0_40px_rgba(255,255,255,0.08)]' : 'shadow-lg shadow-black/40'}
         hover:shadow-xl hover:shadow-black/60
+        ${className}
       `}
     >
       {/* Video Background (simulated) */}

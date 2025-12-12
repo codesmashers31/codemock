@@ -9,7 +9,7 @@ export default function Sessions() {
 
   const [loading, setLoading] = useState(false);
   // Hardcoded for testing the restricted flow
-  const currentUserId = "6936cb4d1364592217626d1a"; 
+  const currentUserId = "693ab0b1e22c57842f0918a7"; 
 
   useEffect(() => {
     // Fetch sessions for this specific expert ID
@@ -37,7 +37,7 @@ export default function Sessions() {
         const data = await res.json();
         
         if (res.ok && data.permitted) {
-            navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert`);
+            navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert&userId=${currentUserId}`);
         } else {
             alert(data.message || "Cannot join session at this time.");
         }

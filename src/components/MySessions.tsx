@@ -219,7 +219,7 @@ const MySessions = () => {
         const data = await res.json();
         
         if (res.ok && data.permitted) {
-            navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate`);
+            navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate&userId=${candidateId}`);
         } else {
             alert(data.message || "Cannot join session at this time.");
         }

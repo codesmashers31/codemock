@@ -29,7 +29,10 @@ export function useSignaling({
     const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
-        if (!meetingId || !userId) return;
+        if (!meetingId || !userId) {
+            console.warn('[useSignaling] Missing meetingId or userId - skipping connection', { meetingId, userId });
+            return;
+        }
 
         // Initialize Socket
         socketRef.current = io(SIGNALING_SERVER_URL, {
@@ -64,7 +67,7 @@ export function useSignaling({
         socketRef.current?.emit('answer', { sdp, meetingId });
     };
 
-    const sendIceCandidate = (candidate: RTCIceCandidate) => {
+    const sendIceCandidate = (candidate: RTCIceCandidateInit) => {
         if (candidate) {
             socketRef.current?.emit('ice-candidate', { candidate, meetingId });
         }

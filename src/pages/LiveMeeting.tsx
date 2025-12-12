@@ -20,6 +20,9 @@ export default function LiveMeeting() {
   const role = (searchParams.get('role') as 'expert' | 'candidate') || 'candidate';
   const userId = searchParams.get('userId') || '';
   
+  // Ref to break circular dependency between hooks
+  const sendIceCandidateRef = useRef<((candidate: RTCIceCandidateInit) => void) | null>(null);
+
   // Validate Auth
   useEffect(() => {
      if (!userId) {
@@ -44,8 +47,10 @@ export default function LiveMeeting() {
     cleanup,
     resetPeerConnection
   } = useWebRTC((candidate) => {
-    // ICE Candidate Callback
-    sendIceCandidate(candidate);
+    // Navigate via Ref to avoid TDZ
+    if (sendIceCandidateRef.current) {
+        sendIceCandidateRef.current(candidate);
+    }
   });
 
   // Signaling Hook
@@ -92,6 +97,11 @@ export default function LiveMeeting() {
       navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
     }
   });
+
+  // Sync Ref
+  useEffect(() => {
+      sendIceCandidateRef.current = sendIceCandidate;
+  }, [sendIceCandidate]);
 
   // Listen for socket errors (Auth, etc)
   useEffect(() => {
@@ -148,7 +158,7 @@ export default function LiveMeeting() {
   };
 
   if (accessDenied) {
-      return <div className="p-10 text-white text-center">Access Denied</div>;
+      return <div className="p-10 text-black text-center">Access Denied</div>;
   }
 
   return (
@@ -166,9 +176,19 @@ export default function LiveMeeting() {
          </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4 place-items-center">
-        {/* Local Video */}
+      {/* Main Stage (Picture in Picture Layout) */}
+      <div className="flex-1 p-4 flex items-center justify-center relative">
+        
+        {/* Remote Video (Main Stage) */}
+        <VideoTile 
+            name={role === 'expert' ? "Candidate" : "Expert"} 
+            stream={remoteStream} 
+            muted={false} 
+            isMainTile={true}
+            className="z-0"
+        />
+
+        {/* Local Video (Floating PIP - Bottom Right) */}
         <VideoTile 
             name="You" 
             stream={localStream} 
@@ -176,14 +196,7 @@ export default function LiveMeeting() {
             cameraEnabled={isCameraOn}
             micEnabled={isMicOn}
             isMainTile={false}
-        />
-
-        {/* Remote Video */}
-        <VideoTile 
-            name={role === 'expert' ? "Candidate" : "Expert"} 
-            stream={remoteStream} 
-            muted={false} 
-            isMainTile={true}
+            className="absolute bottom-6 right-6 z-20 shadow-2xl border border-white/10"
         />
       </div>
 
