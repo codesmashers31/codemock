@@ -29,6 +29,7 @@ const Navigation = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMessageOpen, setIsMessageOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const searchRef = useRef(null);
   const menuRef = useRef(null);
@@ -38,6 +39,26 @@ const Navigation = () => {
   const location = useLocation();
 
   const { user, logout } = useAuth();
+
+  // Fetch user profile image
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      if (user?.id) {
+        try {
+          const response = await fetch('http://localhost:3000/api/user/profile', {
+            headers: { userid: user.id }
+          });
+          const data = await response.json();
+          if (data.success && data.data.profileImage) {
+            setProfileImage(data.data.profileImage);
+          }
+        } catch (error) {
+          console.error('Error fetching profile image:', error);
+        }
+      }
+    };
+    fetchProfileImage();
+  }, [user?.id]);
 
   // Close all dropdowns when route changes
   useEffect(() => {
@@ -51,7 +72,7 @@ const Navigation = () => {
   // Scroll lock when dropdowns are open
   useEffect(() => {
     const shouldLockScroll = isMenuOpen || isNotificationOpen || isMessageOpen || isProfileMenuOpen;
-    
+
     if (shouldLockScroll) {
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = '15px'; // Prevent layout shift
@@ -217,16 +238,15 @@ const Navigation = () => {
     <>
       <nav
         ref={menuRef}
-        className={`bg-white border-b border-gray-200/80 sticky top-0 z-50 backdrop-blur-lg transition-all duration-300 ${
-          scrolled ? "py-2 shadow-lg" : "py-3 shadow-sm"
-        }`}
+        className={`bg-white border-b border-gray-200/80 sticky top-0 z-50 backdrop-blur-lg transition-all duration-300 ${scrolled ? "py-2 shadow-lg" : "py-3 shadow-sm"
+          }`}
       >
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             {/* Left side logo + nav items */}
             <div className="flex items-center space-x-8">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="flex items-center space-x-3 group"
                 onClick={closeAllDropdowns}
               >
@@ -240,7 +260,7 @@ const Navigation = () => {
                   <span className="text-xs text-gray-500 -mt-1">Your Effort Matters!</span>
                 </div>
               </Link>
-              
+
               <div className="hidden lg:flex space-x-1">
                 {navItems.map((item) => (
                   <Link
@@ -265,16 +285,14 @@ const Navigation = () => {
               <div ref={searchRef} className={`relative transition-all duration-300 ${isSearchOpen ? "w-72" : "w-12"}`}>
                 <button
                   onClick={toggleSearch}
-                  className={`absolute right-0 top-1/2 transform -translate-y-1/2 p-2.5 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 z-10 ${
-                    isSearchOpen ? "bg-gray-50 text-gray-700" : ""
-                  }`}
+                  className={`absolute right-0 top-1/2 transform -translate-y-1/2 p-2.5 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 z-10 ${isSearchOpen ? "bg-gray-50 text-gray-700" : ""
+                    }`}
                 >
                   <Search size={18} />
                 </button>
                 <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    isSearchOpen ? "opacity-100 w-full" : "opacity-0 w-0"
-                  }`}
+                  className={`overflow-hidden transition-all duration-300 ${isSearchOpen ? "opacity-100 w-full" : "opacity-0 w-0"
+                    }`}
                 >
                   <form onSubmit={handleSearchSubmit} className="relative">
                     <input
@@ -315,20 +333,18 @@ const Navigation = () => {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`px-5 py-4 border-b border-gray-100 hover:bg-gray-50/80 transition-colors duration-200 cursor-pointer ${
-                            !notification.read ? 'bg-blue-50/50' : ''
-                          }`}
+                          className={`px-5 py-4 border-b border-gray-100 hover:bg-gray-50/80 transition-colors duration-200 cursor-pointer ${!notification.read ? 'bg-blue-50/50' : ''
+                            }`}
                           onClick={() => setIsNotificationOpen(false)}
                         >
                           <div className="flex items-start space-x-3">
-                            <div className={`w-2 h-2 rounded-full mt-2 ${
-                              !notification.read ? 'bg-blue-500' : 'bg-gray-300'
-                            }`}></div>
+                            <div className={`w-2 h-2 rounded-full mt-2 ${!notification.read ? 'bg-blue-500' : 'bg-gray-300'
+                              }`}></div>
                             <div className="flex-1">
                               <h4 className="font-semibold text-gray-900 text-sm">
                                 {notification.title}
@@ -338,13 +354,12 @@ const Navigation = () => {
                               </p>
                               <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs text-gray-500">{notification.time}</span>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  notification.type === 'connection' 
-                                    ? 'bg-green-100 text-green-800'
-                                    : notification.type === 'interview'
+                                <span className={`text-xs px-2 py-1 rounded-full ${notification.type === 'connection'
+                                  ? 'bg-green-100 text-green-800'
+                                  : notification.type === 'interview'
                                     ? 'bg-blue-100 text-blue-800'
                                     : 'bg-gray-100 text-gray-800'
-                                }`}>
+                                  }`}>
                                   {notification.type}
                                 </span>
                               </div>
@@ -353,7 +368,7 @@ const Navigation = () => {
                         </div>
                       ))}
                     </div>
-                    
+
                     <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
                       <Link
                         to="/notifications"
@@ -394,15 +409,14 @@ const Navigation = () => {
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="max-h-80 overflow-y-auto">
                       {messages.map((msg) => (
                         <Link
                           key={msg.id}
                           to={`/messages/${msg.id}`}
-                          className={`block px-5 py-4 border-b border-gray-100 hover:bg-gray-50/80 transition-colors duration-200 ${
-                            msg.unread ? 'bg-blue-50/50' : ''
-                          }`}
+                          className={`block px-5 py-4 border-b border-gray-100 hover:bg-gray-50/80 transition-colors duration-200 ${msg.unread ? 'bg-blue-50/50' : ''
+                            }`}
                           onClick={() => setIsMessageOpen(false)}
                         >
                           <div className="flex items-start space-x-3">
@@ -426,7 +440,7 @@ const Navigation = () => {
                         </Link>
                       ))}
                     </div>
-                    
+
                     <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
                       <Link
                         to="/messages"
@@ -454,26 +468,25 @@ const Navigation = () => {
                     }}
                     className="flex items-center space-x-3 focus:outline-none group p-1.5 rounded-xl hover:bg-gray-50 transition-all duration-200"
                   >
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm overflow-hidden">
                       <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user.name
+                        src={profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          user.name || user.email
                         )}&background=374151&color=fff&bold=true`}
                         alt="profile"
-                        className="w-9 h-9 rounded-xl"
+                        className="w-10 h-10 rounded-xl object-cover"
                       />
                     </div>
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
-                        {user.name.split(" ")[0]}
+                        {user.name?.split(" ")[0] || user.email.split("@")[0]}
                       </span>
                       <span className="text-xs text-gray-500">Premium</span>
                     </div>
                     <ChevronDown
                       size={16}
-                      className={`text-gray-500 transition-transform duration-200 ${
-                        isProfileMenuOpen ? "rotate-180" : ""
-                      }`}
+                      className={`text-gray-500 transition-transform duration-200 ${isProfileMenuOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
@@ -483,17 +496,17 @@ const Navigation = () => {
                       {/* Profile header */}
                       <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100/50">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm">
+                          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm overflow-hidden">
                             <img
-                              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                user.name
+                              src={profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                user.name || user.email
                               )}&background=374151&color=fff&bold=true`}
                               alt="profile"
-                              className="w-11 h-11 rounded-xl"
+                              className="w-12 h-12 rounded-xl object-cover"
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-gray-900 truncate">{user.name}</h4>
+                            <h4 className="font-bold text-gray-900 truncate">{user.name || user.email}</h4>
                             <p className="text-sm text-gray-600 truncate">{user.email}</p>
                             <div className="flex items-center mt-1">
                               <div className="px-2 py-0.5 bg-gradient-to-r from-gray-800 to-gray-600 text-white text-xs rounded-full font-medium">
@@ -503,7 +516,7 @@ const Navigation = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Menu items */}
                       <div className="py-2">
                         {profileMenuItems.map((item) => (
@@ -521,7 +534,7 @@ const Navigation = () => {
                           </Link>
                         ))}
                       </div>
-                      
+
                       {/* Logout button */}
                       <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
                         <button
@@ -608,9 +621,8 @@ const Navigation = () => {
 
         {/* Mobile menu */}
         <div
-          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-            isMenuOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
-          }`}
+          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
+            }`}
         >
           <div className="px-2 pt-2 pb-4 space-y-1 sm:px-3 bg-white/95 backdrop-blur-lg border-t border-gray-200">
             {navItems.map((item) => (
@@ -629,7 +641,7 @@ const Navigation = () => {
 
             <div className="pt-4 pb-2 border-t border-gray-200">
               <div className="flex space-x-3 px-4 py-3">
-                <button 
+                <button
                   className="p-3 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 relative"
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                 >
@@ -638,7 +650,7 @@ const Navigation = () => {
                     {notifications.filter(n => !n.read).length}
                   </span>
                 </button>
-                <button 
+                <button
                   className="p-3 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 relative"
                   onClick={() => setIsMessageOpen(!isMessageOpen)}
                 >
@@ -655,14 +667,14 @@ const Navigation = () => {
                     <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300/50 shadow-sm">
                       <img
                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          user.name
+                          user.name || user.email
                         )}&background=374151&color=fff&bold=true`}
                         alt="profile"
                         className="w-11 h-11 rounded-xl"
                       />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">{user.name}</h4>
+                      <h4 className="font-semibold text-gray-900">{user.name || user.email}</h4>
                       <p className="text-sm text-gray-600">{user.email}</p>
                     </div>
                   </div>
@@ -727,7 +739,7 @@ const Navigation = () => {
 
       {/* Overlay for mobile menu and dropdowns */}
       {(isMenuOpen || isNotificationOpen || isMessageOpen || isProfileMenuOpen) && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/20 z-40 md:hidden"
           onClick={closeAllDropdowns}
         />

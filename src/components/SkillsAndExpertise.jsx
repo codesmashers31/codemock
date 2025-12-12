@@ -7,6 +7,7 @@ const SkillsAndExpertise = () => {
   // const user = "69255389e1a38f2afd8f663d"; // Replace with dynamic userId
   const { user } = useAuth();
   const user_id = user._id;
+
   const DOMAIN_OPTIONS = [
     { value: "recruiting", label: "Recruiting" },
     { value: "talent-acquisition", label: "Talent Acquisition" },
@@ -69,16 +70,15 @@ const SkillsAndExpertise = () => {
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/expert/skills", {
+        // Fetch skills
+        const skillsRes = await axios.get("http://localhost:3000/api/expert/skills", {
           headers: { userid: user_id },
         });
 
-        if (res.data?.data) {
-          setProfile((p) => ({
-            ...p,
-            skills: res.data.data, // Set modes, domains, tools, languages
-          }));
-        }
+        setProfile((p) => ({
+          ...p,
+          skills: skillsRes.data?.data || { mode: "", domains: [], tools: [], languages: [] },
+        }));
       } catch (err) {
         console.error(err);
       }
@@ -98,16 +98,20 @@ const SkillsAndExpertise = () => {
   // ------------------ Save Handler (POST/PUT) ------------------
   const saveSkills = async () => {
     try {
-      const res = await axios.put(
+      // Save skills
+      await axios.put(
         "http://localhost:3000/api/expert/skills",
-        { skillsAndExpertise: profile.skills },
+        {
+          skillsAndExpertise: profile.skills
+        },
         { headers: { userid: user_id } }
       );
 
       alert("Skills saved successfully!");
     } catch (err) {
       console.error(err);
-      alert("Error saving skills!");
+      const errorMsg = err.response?.data?.message || "Error saving skills!";
+      alert(errorMsg);
     }
   };
 

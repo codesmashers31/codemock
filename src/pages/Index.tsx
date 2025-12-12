@@ -1,11 +1,11 @@
 import Navigation from "../components/Navigation";
 import Sidebar from "../components/Sidebar";
-// import ProfileCard from "../components/ProfileCard";
+import CoachSessionCard from "../components/CoachSessionCard";
 import InfoPanel from "../components/InfoPanel";
 // import AdBanner from "../components/AdBanner";
 import Footer from "../components/Footer";
 
-import CoachSessionCard from "../components/CoachSessionCard";
+
 import PromoBanner from "../components/PromoBanner";
 import HeroSection from "../components/HeroSection";
 

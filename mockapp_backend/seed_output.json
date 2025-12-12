@@ -1,1 +1,10 @@
-{"message":"Restricted test session created","session":{"sessionId":"test-restricted-693ab0b1e22c57842f0918a7-693a94fee22c57842f09189e","expertId":"693ab0b1e22c57842f0918a7","candidateId":"693a94fee22c57842f09189e","startTime":"2025-12-11T14:56:21.480Z","endTime":"2025-12-11T15:56:21.480Z","topics":["Restricted Test","Strict Auth"],"status":"confirmed","_id":"693adb1d62f9d183c483bc47","createdAt":"2025-12-11T14:54:21.949Z","__v":0},"expertId":"693ab0b1e22c57842f0918a7","candidateId":"693a94fee22c57842f09189e"}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot POST /api/sessions/dev/seed/test-session</pre>
+</body>
+</html>

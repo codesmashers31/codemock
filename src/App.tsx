@@ -20,6 +20,7 @@ import AvailabilityPage from "./pages/expert/Availability";
 import SkillsPage from "./pages/expert/Skills";
 import LiveMeeting from "./pages/LiveMeeting";
 import ScrollToTop from "./ScrollToTop";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +46,7 @@ function AppRoutes() {
         <Route path="/book-session/:coachName" element={<ProtectedRoute><BookSessionPage /></ProtectedRoute>} />
         <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
         <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
-        <Route path="/live-meeting" element={<ProtectedRoute><LiveMeeting /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
         <Route
           path="/dashboard/*"

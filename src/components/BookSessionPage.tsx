@@ -170,11 +170,10 @@ const BookSessionPage = () => {
             <button
               key={index}
               onClick={() => setSelectedDate(index)}
-              className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all ${
-                selectedDate === index
+              className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all ${selectedDate === index
                   ? "bg-gray-700 text-white shadow-md transform scale-105"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
+                }`}
             >
               <span className="font-semibold text-sm">
                 {index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'short' })}
@@ -191,13 +190,12 @@ const BookSessionPage = () => {
               key={index}
               disabled={!slot.available}
               onClick={() => setSelectedSlot(slot)}
-              className={`p-4 rounded-xl border-2 text-center transition-all ${
-                slot.available
+              className={`p-4 rounded-xl border-2 text-center transition-all ${slot.available
                   ? selectedSlot?.time === slot.time
                     ? "border-gray-700 bg-gray-100 shadow-md transform scale-105"
                     : "border-gray-200 hover:border-gray-400 hover:bg-gray-100"
                   : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
-              }`}
+                }`}
             >
               <div className="font-semibold">{slot.time}</div>
               <div className={`text-xs mt-1 ${slot.available ? 'text-green-600' : 'text-red-500'}`}>
@@ -247,11 +245,10 @@ const BookSessionPage = () => {
         <button
           onClick={() => setShowPayment(true)}
           disabled={!selectedSlot}
-          className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all mt-6 flex items-center justify-center gap-2 ${
-            selectedSlot
+          className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all mt-6 flex items-center justify-center gap-2 ${selectedSlot
               ? "bg-gray-700 hover:bg-gray-900 shadow-lg hover:shadow-xl hover:scale-105"
               : "bg-gray-300 cursor-not-allowed"
-          }`}
+            }`}
         >
           <CreditCard className="w-5 h-5" />
           {selectedSlot ? "Proceed to Payment" : "Select Time Slot"}
@@ -523,21 +520,19 @@ const BookSessionPage = () => {
                   <div className="flex">
                     <button
                       onClick={() => setActiveTab("details")}
-                      className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${
-                        activeTab === "details"
+                      className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "details"
                           ? "border-gray-700 text-gray-700 bg-gray-50"
                           : "border-transparent text-gray-500 hover:text-gray-700"
-                      }`}
+                        }`}
                     >
                       Session Details
                     </button>
                     <button
                       onClick={() => setActiveTab("reviews")}
-                      className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${
-                        activeTab === "reviews"
+                      className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "reviews"
                           ? "border-gray-700 text-gray-700 bg-gray-50"
                           : "border-transparent text-gray-500 hover:text-gray-700"
-                      }`}
+                        }`}
                     >
                       Reviews & Ratings ({reviews.length})
                     </button>
