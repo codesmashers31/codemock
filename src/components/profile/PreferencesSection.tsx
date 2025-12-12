@@ -1,9 +1,21 @@
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import { Save, DollarSign, Clock, MapPin, Briefcase } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-export default function PreferencesSection({ profileData, onUpdate }) {
+interface PreferencesSectionProps {
+    profileData: {
+        preferences?: {
+            jobType?: string;
+            expectedSalary?: string;
+            noticePeriod?: string;
+            willingToRelocate?: boolean;
+        };
+    };
+    onUpdate: () => void;
+}
+
+export default function PreferencesSection({ profileData, onUpdate }: PreferencesSectionProps) {
     const { user } = useAuth();
     const [formData, setFormData] = useState({
         jobType: profileData?.preferences?.jobType || "",
@@ -13,8 +25,9 @@ export default function PreferencesSection({ profileData, onUpdate }) {
     });
     const [saving, setSaving] = useState(false);
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
         setFormData({
             ...formData,
             [name]: type === "checkbox" ? checked : value
