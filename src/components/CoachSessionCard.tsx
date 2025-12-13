@@ -47,6 +47,12 @@ interface Profile {
   isFeatured?: boolean;
   availableTime?: string;
   company?: string;
+  availability?: {
+    sessionDuration: number;
+    maxPerDay: number;
+    weekly: Record<string, any[]>;
+    breakDates: any[];
+  };
 }
 
 const getCategoryIcon = (category: Category) => {
@@ -68,8 +74,11 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   const navigate = useNavigate();
 
   const handleBookNow = () => {
-    navigate(`/book-session/${profile.name}`, {
-      state: { profile }
+    navigate(`/book-session`, {
+      state: {
+        profile: profile,
+        expertId: profile.id
+      }
     });
   };
 
@@ -621,7 +630,8 @@ export default function MockInterviewPlatform() {
               isVerified: expert.status === "Active",
               isFeatured: Math.random() > 0.75, // 25% chance of being featured
               availableTime: availableTime,
-              languages: languages
+              languages: languages,
+              availability: expert.availability // Passing raw availability data
             };
           });
 

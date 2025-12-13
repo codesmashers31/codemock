@@ -2,8 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Card, Input, PrimaryButton, SecondaryButton, IconButton } from "../pages/ExpertDashboard";
 import axios from "axios";
 
+import { useAuth } from "../context/AuthContext";
+
 const ExpertEducation = () => {
-    const user = "69255389e1a38f2afd8f663d";
+    const { user } = useAuth();
+    // Using user?.id based on AuthContext definition (User interface has id?: string)
+    // Fallback to empty string if undefined to avoid breaking API calls, but effect will skip if no user
+    const userId = user?.id || "";
 
     const initialProfile = { education: [] };
     const [profile, setProfile] = useState(initialProfile);
@@ -25,10 +30,15 @@ const ExpertEducation = () => {
 
     // ---------------- GET education ----------------
     useEffect(() => {
+        if (!userId) {
+            setLoading(false);
+            return;
+        }
+
         const fetchEducation = async () => {
             try {
                 const response = await axios.get("http://localhost:3000/api/expert/education", {
-                    headers: { userid: user }
+                    headers: { userid: userId }
                 });
 
                 if (response.data.success) {
@@ -36,7 +46,8 @@ const ExpertEducation = () => {
                 }
             } catch (err) {
                 if (err.response && err.response.status === 404) {
-                    alert(err.response.data.message); // Personal info missing
+                    // alert(err.response.data.message); // Personal info missing - suppressing alert on load
+                    console.log("Profile not found or empty");
                 } else {
                     console.error("Failed to fetch education:", err);
                 }
@@ -46,15 +57,20 @@ const ExpertEducation = () => {
         };
 
         fetchEducation();
-    }, [user]);
+    }, [userId]);
 
     // ---------------- Save / Upsert ----------------
     const saveEducation = async () => {
+        if (!userId) {
+            alert("User not logged in");
+            return;
+        }
+
         try {
             const response = await axios.put(
                 "http://localhost:3000/api/expert/education",
                 { education: profile.education },
-                { headers: { userid: user } }
+                { headers: { userid: userId } }
             );
 
             if (response.data.success) {
@@ -80,7 +96,7 @@ const ExpertEducation = () => {
             // Call DELETE endpoint to remove from DB
             const response = await axios.delete(
                 `http://localhost:3000/api/expert/education/${idx}`,
-                { headers: { userid: user } }
+                { headers: { userid: userId } }
             );
 
             if (!response.data.success) {

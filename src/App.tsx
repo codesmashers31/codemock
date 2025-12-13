@@ -43,7 +43,7 @@ function AppRoutes() {
         <Route path="/signin" element={<Login />} />
         <Route path="/signup" element={<Register />} />
 
-        <Route path="/book-session/:coachName" element={<ProtectedRoute><BookSessionPage /></ProtectedRoute>} />
+        <Route path="/book-session" element={<ProtectedRoute><BookSessionPage /></ProtectedRoute>} />
         <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
         <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
         <Route path="/live-meeting" element={<ProtectedRoute><LiveMeeting /></ProtectedRoute>} />

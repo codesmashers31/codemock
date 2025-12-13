@@ -1,5 +1,6 @@
-import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react";
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   Star, MapPin, Clock, BookOpen, Users, Award,
   Calendar, CheckCircle, CreditCard, Shield, Video,
@@ -9,28 +10,76 @@ import {
 import Swal from "sweetalert2";
 import Navigation from "./Navigation";
 import Footer from "./Footer";
+import { mapExpertToProfile, Profile } from "../lib/bookSessionUtils";
 
 const BookSessionPage = () => {
   const [showPayment, setShowPayment] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile } = location.state || {};
+  const { profile: existingProfile, expertId: stateExpertId } = location.state || {};
+
+  // Use expertId from state, or fallback to profile.id if available
+  const expertId = stateExpertId || existingProfile?.id;
+
+  const [profile, setProfile] = useState<Profile | null>(existingProfile || null);
+  const [loading, setLoading] = useState(!existingProfile);
+  const [errorValue, setErrorValue] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!profile && expertId) {
+      const fetchProfile = async () => {
+        try {
+          setLoading(true);
+          // Since there isn't a direct public by-ID endpoint, we fetch all verified experts and filter
+          // Optimized approach would be adding a specific endpoint in backend
+          const response = await axios.get("http://localhost:3000/api/expert/verified");
+          if (response.data?.success && response.data?.data) {
+            const foundExpert = response.data.data.find((e: any) =>
+              e._id === expertId || e.userId === expertId
+            );
+
+            if (foundExpert) {
+              setProfile(mapExpertToProfile(foundExpert));
+            } else {
+              setErrorValue("Expert not found");
+            }
+          } else {
+            setErrorValue("Failed to load expert data");
+          }
+        } catch (err) {
+          console.error(err);
+          setErrorValue("Error connecting to server");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProfile();
+    }
+  }, [expertId, profile]);
 
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; available: boolean } | null>(null);
   const [showMobileBooking, setShowMobileBooking] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
-  const [showProfile, setShowProfile] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const showPaymentPage = () => {
     navigate("/payment");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-800 border-t-transparent"></div>
+      </div>
+    );
+  }
+
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile Not Found</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{errorValue || "Profile Not Found"}</h2>
           <button
             onClick={() => navigate('/')}
             className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
@@ -77,17 +126,67 @@ const BookSessionPage = () => {
     return date;
   });
 
-  // Time slots
-  const timeSlots = [
-    { time: "09:00 AM", available: true },
-    { time: "10:30 AM", available: true },
-    { time: "12:00 PM", available: false },
-    { time: "01:30 PM", available: true },
-    { time: "03:00 PM", available: true },
-    { time: "04:30 PM", available: true },
-    { time: "06:00 PM", available: false },
-    { time: "07:30 PM", available: true },
-  ];
+  // Get available slots for selected date
+  const getAvailableSlots = (dateIndex: number) => {
+    if (!profile?.availability) return [];
+
+    const date = dates[dateIndex];
+    // Check break dates
+    const isBreakDate = profile.availability.breakDates?.some((breakDate: any) => {
+      const bd = new Date(breakDate.start); // Assuming breakDate has a start property
+      return bd.toDateString() === date.toDateString();
+    });
+
+    if (isBreakDate) return [];
+
+    // User data uses "mon", "tue", "fri" keys
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase(); // "mon", "tue", "wed"...
+    const weeklyRanges = profile.availability.weekly?.[dayName] || [];
+
+    // Helper to parse "HH:mm" to minutes
+    const parseTimeToMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    // Helper to format minutes to "HH:mm AM/PM"
+    const formatMinutesToTime = (totalMinutes: number) => {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    };
+
+    const sessionDuration = profile.availability.sessionDuration || 30;
+    const generatedSlots: { time: string; available: boolean }[] = [];
+
+    weeklyRanges.forEach((range: { from: string; to: string }) => {
+      if (!range.from || !range.to) return;
+
+      let currentMinutes = parseTimeToMinutes(range.from);
+      const endMinutes = parseTimeToMinutes(range.to);
+
+      // Generate slots until adding sessionDuration would exceed endMinutes
+      // Using < instead of <= to prevent creating a slot that ends exactly at the boundary if that's preferred
+      // but typically if range is 6-7 and duration 60, getting 6-7 is one slot. 
+      // 6:00 is slot start. 6:00 + 60 = 7:00. 7:00 <= 7:00. So one slot.
+      while (currentMinutes + sessionDuration <= endMinutes) {
+        generatedSlots.push({
+          time: formatMinutesToTime(currentMinutes),
+          available: true
+        });
+        currentMinutes += sessionDuration;
+      }
+    });
+
+    return generatedSlots.sort((a, b) => {
+      // Simple sort by time string
+      return a.time.localeCompare(b.time);
+    });
+  };
+
+  const currentSlots = getAvailableSlots(selectedDate);
 
   // Category colors: now gray theme
   const getCategoryColor = (section: string | number) => {
@@ -171,8 +270,8 @@ const BookSessionPage = () => {
               key={index}
               onClick={() => setSelectedDate(index)}
               className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all ${selectedDate === index
-                  ? "bg-gray-700 text-white shadow-md transform scale-105"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                ? "bg-gray-700 text-white shadow-md transform scale-105"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
             >
               <span className="font-semibold text-sm">
@@ -184,25 +283,32 @@ const BookSessionPage = () => {
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {timeSlots.map((slot, index) => (
-            <button
-              key={index}
-              disabled={!slot.available}
-              onClick={() => setSelectedSlot(slot)}
-              className={`p-4 rounded-xl border-2 text-center transition-all ${slot.available
+        <div className="grid grid-cols-2 gap-3 min-h-[200px]">
+          {currentSlots.length > 0 ? (
+            currentSlots.map((slot: any, index: number) => (
+              <button
+                key={index}
+                disabled={!slot.available}
+                onClick={() => setSelectedSlot(slot)}
+                className={`p-4 rounded-xl border-2 text-center transition-all ${slot.available
                   ? selectedSlot?.time === slot.time
                     ? "border-gray-700 bg-gray-100 shadow-md transform scale-105"
                     : "border-gray-200 hover:border-gray-400 hover:bg-gray-100"
                   : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
-                }`}
-            >
-              <div className="font-semibold">{slot.time}</div>
-              <div className={`text-xs mt-1 ${slot.available ? 'text-green-600' : 'text-red-500'}`}>
-                {slot.available ? "✓ Available" : "✗ Booked"}
-              </div>
-            </button>
-          ))}
+                  }`}
+              >
+                <div className="font-semibold">{slot.time}</div>
+                <div className={`text-xs mt-1 ${slot.available ? 'text-green-600' : 'text-red-500'}`}>
+                  {slot.available ? "✓ Available" : "✗ Booked"}
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className="col-span-2 flex flex-col items-center justify-center text-gray-500 py-10">
+              <Calendar className="w-10 h-10 mb-2 opacity-50" />
+              <p>No available slots for this date.</p>
+            </div>
+          )}
         </div>
       </div>
       <div className="bg-gray-50 rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -222,7 +328,7 @@ const BookSessionPage = () => {
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-700">Duration</span>
-              <span className="font-semibold">60 minutes</span>
+              <span className="font-semibold">{profile.availability?.sessionDuration || 30} minutes</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-700">Session Type</span>
@@ -246,8 +352,8 @@ const BookSessionPage = () => {
           onClick={() => setShowPayment(true)}
           disabled={!selectedSlot}
           className={`w-full py-4 px-6 rounded-xl font-semibold text-white transition-all mt-6 flex items-center justify-center gap-2 ${selectedSlot
-              ? "bg-gray-700 hover:bg-gray-900 shadow-lg hover:shadow-xl hover:scale-105"
-              : "bg-gray-300 cursor-not-allowed"
+            ? "bg-gray-700 hover:bg-gray-900 shadow-lg hover:shadow-xl hover:scale-105"
+            : "bg-gray-300 cursor-not-allowed"
             }`}
         >
           <CreditCard className="w-5 h-5" />
@@ -297,7 +403,7 @@ const BookSessionPage = () => {
           <Search size={20} />
           <span className="text-xs mt-1">Search</span>
         </button>
-        <button className="flex flex-col items-center text-gray-600" onClick={() => setShowProfile(true)}>
+        <button className="flex flex-col items-center text-gray-600" onClick={() => setShowProfileModal(true)}>
           <User size={20} />
           <span className="text-xs mt-1">Profile</span>
         </button>
@@ -307,12 +413,12 @@ const BookSessionPage = () => {
         </button>
       </div>
 
-      {showProfile && (
+      {showProfileModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center">
           <div className="w-full bg-white rounded-t-2xl max-h-[85vh] overflow-y-auto p-6 animate-slideUp">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold">Your Profile</h3>
-              <button onClick={() => setShowProfile(false)} className="p-2">
+              <button onClick={() => setShowProfileModal(false)} className="p-2">
                 <X size={20} />
               </button>
             </div>
@@ -521,8 +627,8 @@ const BookSessionPage = () => {
                     <button
                       onClick={() => setActiveTab("details")}
                       className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "details"
-                          ? "border-gray-700 text-gray-700 bg-gray-50"
-                          : "border-transparent text-gray-500 hover:text-gray-700"
+                        ? "border-gray-700 text-gray-700 bg-gray-50"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
                         }`}
                     >
                       Session Details
@@ -530,8 +636,8 @@ const BookSessionPage = () => {
                     <button
                       onClick={() => setActiveTab("reviews")}
                       className={`flex-1 px-6 py-4 font-semibold border-b-2 transition-all ${activeTab === "reviews"
-                          ? "border-gray-700 text-gray-700 bg-gray-50"
-                          : "border-transparent text-gray-500 hover:text-gray-700"
+                        ? "border-gray-700 text-gray-700 bg-gray-50"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
                         }`}
                     >
                       Reviews & Ratings ({reviews.length})
@@ -553,7 +659,7 @@ const BookSessionPage = () => {
                               <Clock className="w-6 h-6 text-gray-600" />
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-800">60 Minutes</div>
+                              <div className="font-semibold text-gray-800">{profile.availability?.sessionDuration || 30} Minutes</div>
                               <div className="text-sm text-gray-600">Session Duration</div>
                             </div>
                           </div>
