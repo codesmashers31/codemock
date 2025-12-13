@@ -26,10 +26,8 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-
   const notificationsRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
-
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Fetch notifications for logged in user
@@ -324,20 +322,22 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
                 )}
               </div>
 
-              <div className="py-1">
-                <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                  Profile Settings
-                </Link>
-                <Link to="/sessions" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                  My Sessions
-                </Link>
-                <Link to="/availability" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                  Availability
-                </Link>
-                <Link to="/payments" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                  Payments & Earnings
-                </Link>
-              </div>
+                {user?.userType === "expert" &&
+                  <div className="py-1">
+                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                      Profile Settings
+                    </Link>
+                    <Link to="/sessions" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                      My Sessions
+                    </Link>
+                    <Link to="/availability" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                      Availability
+                    </Link>
+                    <Link to="/payments" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                      Payments & Earnings
+                    </Link>
+                  </div>
+                }
 
               <div className="py-1 border-t border-gray-200">
                 <button onClick={handleSignOut} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" role="menuitem">

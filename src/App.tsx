@@ -21,20 +21,33 @@ import SkillsPage from "./pages/expert/Skills";
 import LiveMeeting from "./pages/LiveMeeting";
 import ScrollToTop from "./ScrollToTop";
 import UserProfile from "./pages/UserProfile";
+import AdminPage from "./pages/AdminPage";
+import SessionManagement from "./components/SessionManagement";
+import PendingExpertsTable from "./components/PendingExpertsTable";
+import VerifiedExpertsTable from "./components/VerifiedExpertsTable";
+import RejectedExpertsTable from "./components/RejectedExpertsTable";
+import UsersTable from "./components/UsersTable";
+import CategoriesPanel from "./components/CategoriesPanel";
+import ReportsPanel from "./components/ReportsPanel";
+import AdminDashboardIndex from "./components/AdminDashboardIndex";
+import { log } from "console";
 
 const queryClient = new QueryClient();
 
 function LandingOrRedirect() {
   const { user } = useAuth();
   if (user?.userType === "expert") return <Navigate to="/dashboard" replace />;
+   if (user?.userType === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
   return <Index />;
 }
 
 function AppRoutes() {
   const { user } = useAuth();
-
   return (
-    <BrowserRouter>
+    <>
       {/* ScrollToTop must be inside BrowserRouter but outside Routes */}
       <ScrollToTop />
       <Routes>
@@ -49,11 +62,16 @@ function AppRoutes() {
         <Route path="/live-meeting" element={<ProtectedRoute><LiveMeeting /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
+        {/* ---------------- EXPERT DASHBOARD ---------------- */}
         <Route
           path="/dashboard/*"
           element={
             <ProtectedRoute>
-              {user?.userType === "expert" ? <ExpertLayout /> : <Navigate to="/" replace />}
+              {user?.userType === "expert" ? (
+                <ExpertLayout />
+              ) : (
+                <Navigate to="/" replace />
+              )}
             </ProtectedRoute>
           }
         >
@@ -64,17 +82,42 @@ function AppRoutes() {
           <Route path="skills" element={<SkillsPage />} />
         </Route>
 
+           {/* ---------------- ADMIN DASHBOARD ---------------- */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute>
+              {user?.userType === "admin" ? (
+                <AdminPage />
+              ) : (
+                <Navigate to="/" replace />
+              )}
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboardIndex />} />
+          <Route path="sessions" element={<SessionManagement />} />
+          <Route path="experts/pending" element={<PendingExpertsTable />} />
+          <Route path="experts/verified" element={<VerifiedExpertsTable />} />
+          <Route path="experts/rejected" element={<RejectedExpertsTable />} />
+          <Route path="users" element={<UsersTable />} />
+          <Route path="categories" element={<CategoriesPanel />} />
+          <Route path="reports" element={<ReportsPanel />} />
+        </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+   <>
+   <QueryClientProvider client={queryClient}>
       <Toaster />
       <AppRoutes />
     </QueryClientProvider>
+   </> 
   );
 }
