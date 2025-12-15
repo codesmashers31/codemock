@@ -622,6 +622,7 @@ export default function MockInterviewPlatform() {
               category: category as Category,
               company: company,
               avatar: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
+              logo: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
               location: location,
               mode: mode,
               reviews: reviews,

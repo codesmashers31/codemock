@@ -30,14 +30,14 @@ import UsersTable from "./components/UsersTable";
 import CategoriesPanel from "./components/CategoriesPanel";
 import ReportsPanel from "./components/ReportsPanel";
 import AdminDashboardIndex from "./components/AdminDashboardIndex";
-import { log } from "console";
+
 
 const queryClient = new QueryClient();
 
 function LandingOrRedirect() {
   const { user } = useAuth();
   if (user?.userType === "expert") return <Navigate to="/dashboard" replace />;
-   if (user?.userType === "admin") {
+  if (user?.userType === "admin") {
     return <Navigate to="/admin" replace />;
   }
 
@@ -82,7 +82,7 @@ function AppRoutes() {
           <Route path="skills" element={<SkillsPage />} />
         </Route>
 
-           {/* ---------------- ADMIN DASHBOARD ---------------- */}
+        {/* ---------------- ADMIN DASHBOARD ---------------- */}
         <Route
           path="/admin/*"
           element={
@@ -113,11 +113,11 @@ function AppRoutes() {
 
 export default function App() {
   return (
-   <>
-   <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <AppRoutes />
-    </QueryClientProvider>
-   </> 
+    <>
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <AppRoutes />
+      </QueryClientProvider>
+    </>
   );
 }

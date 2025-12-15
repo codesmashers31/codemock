@@ -100,10 +100,9 @@ export default function AdminPage() {
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm font-medium transition-colors
-                ${
-                  isActive
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-700 hover:bg-gray-50"
+                ${isActive
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-700 hover:bg-gray-50"
                 }`
               }
             >

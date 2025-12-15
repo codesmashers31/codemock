@@ -158,7 +158,7 @@ const BookSessionPage = () => {
       return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     };
 
-    const sessionDuration = profile.availability.sessionDuration || 30;
+    const sessionDuration = profile.availability.sessionDuration || 60; // Default to 60 if missing
     const generatedSlots: { time: string; available: boolean }[] = [];
 
     weeklyRanges.forEach((range: { from: string; to: string }) => {
@@ -167,13 +167,12 @@ const BookSessionPage = () => {
       let currentMinutes = parseTimeToMinutes(range.from);
       const endMinutes = parseTimeToMinutes(range.to);
 
-      // Generate slots until adding sessionDuration would exceed endMinutes
-      // Using < instead of <= to prevent creating a slot that ends exactly at the boundary if that's preferred
-      // but typically if range is 6-7 and duration 60, getting 6-7 is one slot. 
-      // 6:00 is slot start. 6:00 + 60 = 7:00. 7:00 <= 7:00. So one slot.
       while (currentMinutes + sessionDuration <= endMinutes) {
+        const slotStart = formatMinutesToTime(currentMinutes);
+        const slotEnd = formatMinutesToTime(currentMinutes + sessionDuration);
+
         generatedSlots.push({
-          time: formatMinutesToTime(currentMinutes),
+          time: `${slotStart} - ${slotEnd}`,
           available: true
         });
         currentMinutes += sessionDuration;
@@ -185,6 +184,11 @@ const BookSessionPage = () => {
       return a.time.localeCompare(b.time);
     });
   };
+
+  // Calculate total available slots for the next 7 days
+  const totalAvailableSlots = dates.reduce((acc, _, index) => {
+    return acc + getAvailableSlots(index).length;
+  }, 0);
 
   const currentSlots = getAvailableSlots(selectedDate);
 
@@ -328,7 +332,7 @@ const BookSessionPage = () => {
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-700">Duration</span>
-              <span className="font-semibold">{profile.availability?.sessionDuration || 30} minutes</span>
+              <span className="font-semibold">{profile.availability?.sessionDuration || 60} minutes</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-700">Session Type</span>
@@ -539,10 +543,16 @@ const BookSessionPage = () => {
                   <div className="relative shrink-0">
                     <div className="relative">
                       <img
-                        src={profile.logo}
+                        src={profile.logo || profile.avatar || "/mocki_log.png"}
                         alt={profile.name}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null; // Prevent infinite loop
+                          target.src = "/mocki_log.png";
+                        }}
                         className="w-24 h-24 rounded-2xl object-cover shadow-md border-2 border-white"
                       />
+
                       <div className="absolute -bottom-2 -right-2 bg-green-500 border-2 border-white w-5 h-5 rounded-full"></div>
                     </div>
                     <div className="absolute -top-2 -right-2 bg-gray-700 text-white px-2 py-1 rounded-lg text-xs font-medium shadow-sm">
@@ -562,7 +572,9 @@ const BookSessionPage = () => {
                             <span className="text-sm text-gray-600">({profile.reviews})</span>
                           </div>
                         </div>
-                        <p className="text-lg text-gray-700 font-medium">{profile.role}</p>
+                        <p className="text-lg text-gray-700 font-medium">
+                          {profile.role} {profile.company && <span className="text-gray-500">at {profile.company}</span>}
+                        </p>
                       </div>
                       <span className={`px-3 py-1 rounded-full ${getCategoryColor(profile.category)} text-sm font-medium`}>
                         {profile.category}
@@ -571,7 +583,7 @@ const BookSessionPage = () => {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">{profile.openings}</div>
+                        <div className="text-2xl font-bold text-gray-900">{totalAvailableSlots}</div>
                         <div className="text-xs text-gray-500 uppercase tracking-wide">Available Slots</div>
                       </div>
                       <div className="text-center border-x border-gray-200">
@@ -659,7 +671,7 @@ const BookSessionPage = () => {
                               <Clock className="w-6 h-6 text-gray-600" />
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-800">{profile.availability?.sessionDuration || 30} Minutes</div>
+                              <div className="font-semibold text-gray-800">{profile.availability?.sessionDuration || 60} Minutes</div>
                               <div className="text-sm text-gray-600">Session Duration</div>
                             </div>
                           </div>

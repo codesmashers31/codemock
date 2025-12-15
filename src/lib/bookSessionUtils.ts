@@ -97,7 +97,7 @@ const getJobTitle = (professionalDetails: any, category: string) => {
 
 const formatAvailability = (availability: any) => {
     if (!availability) return "Flexible Hours";
-    const duration = availability.sessionDuration || 30;
+    const duration = availability.sessionDuration || 60;
     const maxPerDay = availability.maxPerDay || 1;
     return `${duration} min sessions, up to ${maxPerDay}/day`;
 };
