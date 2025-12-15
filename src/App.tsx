@@ -1,8 +1,6 @@
-// src/App.tsx
-import React from "react";
 import { Toaster } from "./components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -21,15 +19,20 @@ import SkillsPage from "./pages/expert/Skills";
 import LiveMeeting from "./pages/LiveMeeting";
 import ScrollToTop from "./ScrollToTop";
 import UserProfile from "./pages/UserProfile";
-import AdminPage from "./pages/AdminPage";
-import SessionManagement from "./components/SessionManagement";
+
+
+
 import PendingExpertsTable from "./components/PendingExpertsTable";
-import VerifiedExpertsTable from "./components/VerifiedExpertsTable";
+
 import RejectedExpertsTable from "./components/RejectedExpertsTable";
-import UsersTable from "./components/UsersTable";
+
 import CategoriesPanel from "./components/CategoriesPanel";
 import ReportsPanel from "./components/ReportsPanel";
 import AdminDashboardIndex from "./components/AdminDashboardIndex";
+import AdminPage from "./pages/AdminPage";
+import SessionManagement from "./components/SessionManagement";
+import VerifiedExpertsTable from "./components/VerifiedExpertsTable";
+import UsersTable from "./components/UsersTable";
 
 
 const queryClient = new QueryClient();

@@ -7,8 +7,7 @@ const PersonalInfo = () => {
 
     const { user } = useAuth();
     //console.log(user._id);
-    const user_id = user._id
-    //console.log('th',user_id);
+
 
     const CATEGORY_OPTIONS = [
         { value: "IT", label: "IT / Technology" },
@@ -35,16 +34,14 @@ const PersonalInfo = () => {
     const [profile, setProfile] = useState(initialProfile);
     const [loading, setLoading] = useState(true);
 
-    const setPersonalField = (field, value) =>
+    const setPersonalField = (field: string, value: string) =>
         setProfile((p) => ({ ...p, personal: { ...p.personal, [field]: value } }));
 
     // -------------------- GET personal info --------------------
     useEffect(() => {
         const fetchPersonalInfo = async () => {
             try {
-                const response = await axios.get(`http://localhost:3000/api/expert/personalinfo`, {
-                    headers: { userid: user_id }
-                });
+                const response = await axios.get(`/api/expert/personalinfo`);
 
                 if (response.data.success && response.data.data) {
                     const data = response.data.data;
@@ -63,7 +60,7 @@ const PersonalInfo = () => {
                         }
                     });
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to fetch personal info:", err);
             } finally {
                 setLoading(false);
@@ -91,12 +88,11 @@ const PersonalInfo = () => {
             console.log("Full payload:", payload);
 
             const response = await axios.put(
-                `http://localhost:3000/api/expert/personalinfo`,
+                `/api/expert/personalinfo`,
                 payload,
                 {
                     headers: {
-                        "Content-Type": "application/json",
-                        userid: user_id
+                        "Content-Type": "application/json"
                     }
                 }
             );
@@ -108,7 +104,7 @@ const PersonalInfo = () => {
             } else {
                 alert("Failed to update personal info");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             alert(err.response?.data?.message || "Server error");
         }

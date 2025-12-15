@@ -1,10 +1,10 @@
 // src/components/ExpertProfileHeader.jsx
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, ReactNode } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Card, SecondaryButton } from "../pages/ExpertDashboard";
 
-function ProgressRing({ size = 110, stroke = 8, percent = 0, children }) {
+function ProgressRing({ size = 110, stroke = 8, percent = 0, children }: { size?: number; stroke?: number; percent?: number; children: ReactNode }) {
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
@@ -56,16 +56,16 @@ const ExpertProfileHeader = () => {
 
   const { user } = useAuth();
   //console.log(user._id);
-  const user_id = user._id
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const photoInputRef = useRef(null);
+
+  /* token removed */
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "", status: "pending" });
   const [completion, setCompletion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fallbackName = user?.name || "";
 
@@ -73,17 +73,15 @@ const ExpertProfileHeader = () => {
     setLoading(true);
     setError(null);
 
-    if (!token) {
-      setError("No token found. Please login.");
+    if (!user) {
+      setError("No user found. Please login.");
       setProfile(prev => ({ ...prev, name: fallbackName }));
       setLoading(false);
       return;
     }
 
     try {
-      const res = await axios.get("http://localhost:3000/api/expert/profile", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get("/api/expert/profile");
 
       //console.log("GET http://localhost:3000/api/expert/profile =>", res?.data);
 
@@ -101,7 +99,7 @@ const ExpertProfileHeader = () => {
         setError(res.data?.message || "Failed to fetch profile");
         setProfile(prev => ({ ...prev, name: fallbackName }));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("fetchProfile error:", err);
       const msg = err?.response?.data?.message || err.message || "Error fetching profile";
       setError(msg);
@@ -114,12 +112,12 @@ const ExpertProfileHeader = () => {
   useEffect(() => {
     fetchProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user]);
+  }, [user]);
 
-  const handlePhotoUpload = async (file) => {
+  const handlePhotoUpload = async (file: File) => {
     if (!file) return;
-    if (!token) {
-      setError("No token found. Please login.");
+    if (!user) {
+      setError("No user found. Please login.");
       return;
     }
     setUploading(true);
@@ -129,8 +127,8 @@ const ExpertProfileHeader = () => {
       const fd = new FormData();
       fd.append("photo", file);
 
-      const res = await axios.post("http://localhost:3000/api/expert/profile/photo", fd, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
+      const res = await axios.post("/api/expert/profile/photo", fd, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
 
       //console.log("POST http://localhost:3000/api/expert/profile/photo =>", res?.data);
@@ -149,7 +147,7 @@ const ExpertProfileHeader = () => {
       } else {
         setError(res.data?.message || "Upload failed");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("handlePhotoUpload error:", err);
       const msg = err?.response?.data?.message || err.message || "Upload failed";
       setError(msg);
@@ -196,7 +194,7 @@ const ExpertProfileHeader = () => {
         </div>
 
         <div className="mt-6 w-full">
-          <input ref={photoInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => handlePhotoUpload(e.target.files[0])} />
+          <input ref={photoInputRef} type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files && handlePhotoUpload(e.target.files[0])} />
           <SecondaryButton onClick={() => photoInputRef.current?.click()} disabled={uploading || loading} className="w-full">
             {uploading ? "Uploading..." : "Change Photo"}
           </SecondaryButton>

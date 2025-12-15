@@ -483,7 +483,7 @@ const calculatePrice = (experience: string, category: string) => {
 };
 
 // Main Component
-export default function MockInterviewPlatform() {
+export default function CoachSessionCard() {
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

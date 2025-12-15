@@ -59,12 +59,45 @@ const BookSessionPage = () => {
 
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState<{ time: string; available: boolean } | null>(null);
+  const [bookedSessions, setBookedSessions] = useState<any[]>([]);
   const [showMobileBooking, setShowMobileBooking] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showProfileModal, setShowProfileModal] = useState(false);
 
+  // Fetch booked sessions
+  useEffect(() => {
+    if (expertId) {
+      const fetchSessions = async () => {
+        try {
+          // Assuming this endpoint returns all sessions for the expert
+          const res = await axios.get(`http://localhost:3000/api/sessions/expert/${expertId}`);
+          if (Array.isArray(res.data)) {
+            setBookedSessions(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch booked sessions", err);
+        }
+      };
+      fetchSessions();
+    }
+  }, [expertId]);
+
   const showPaymentPage = () => {
-    navigate("/payment");
+    if (!profile) return;
+    navigate("/payment", {
+      state: {
+        bookingDetails: {
+          expertId: profile.id, // Ensure we have an ID
+          expertName: profile.name,
+          expertRole: profile.role,
+          date: dates[selectedDate],
+          slot: selectedSlot,
+          price: profile.price,
+          duration: profile.availability?.sessionDuration || 60,
+          category: profile.category
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -151,8 +184,9 @@ const BookSessionPage = () => {
 
     // Helper to format minutes to "HH:mm AM/PM"
     const formatMinutesToTime = (totalMinutes: number) => {
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
+      const adjustedMinutes = totalMinutes % (24 * 60);
+      const hours = Math.floor(adjustedMinutes / 60);
+      const minutes = adjustedMinutes % 60;
       const period = hours >= 12 ? 'PM' : 'AM';
       const displayHours = hours % 12 || 12;
       return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
@@ -165,15 +199,44 @@ const BookSessionPage = () => {
       if (!range.from || !range.to) return;
 
       let currentMinutes = parseTimeToMinutes(range.from);
-      const endMinutes = parseTimeToMinutes(range.to);
+      let endMinutes = parseTimeToMinutes(range.to);
+
+      // Handle ranges crossing midnight
+      if (endMinutes < currentMinutes) {
+        endMinutes += 24 * 60;
+      }
 
       while (currentMinutes + sessionDuration <= endMinutes) {
+        // Create Date object for this slot start
+        const slotStartMinutes = currentMinutes;
+        const slotDate = new Date(date);
+        slotDate.setHours(Math.floor(slotStartMinutes / 60), slotStartMinutes % 60, 0, 0);
+
+        // Check if this slot is already booked
+        const isBooked = bookedSessions.some(session => {
+          if (session.status === 'cancelled') return false;
+          // Assuming session.startTime is ISO string
+          const sStart = new Date(session.startTime);
+          const sEnd = new Date(session.endTime);
+
+          // Simple overlap check or exact start match
+          // A session blocks this slot if it starts at the same time
+          // OR if it overlaps significantly.
+          // For simple "slot based" system, exact start match is usually sufficient if fixed duration.
+          // But let's check overlap: SlotStart < SessionEnd && SlotEnd > SessionStart
+          const slotEndMinutes = currentMinutes + sessionDuration;
+          const slotEndDate = new Date(date);
+          slotEndDate.setHours(Math.floor(slotEndMinutes / 60), slotEndMinutes % 60, 0, 0);
+
+          return slotDate < sEnd && slotEndDate > sStart;
+        });
+
         const slotStart = formatMinutesToTime(currentMinutes);
         const slotEnd = formatMinutesToTime(currentMinutes + sessionDuration);
 
         generatedSlots.push({
           time: `${slotStart} - ${slotEnd}`,
-          available: true
+          available: !isBooked
         });
         currentMinutes += sessionDuration;
       }
@@ -272,6 +335,7 @@ const BookSessionPage = () => {
           {dates.map((date, index) => (
             <button
               key={index}
+              type="button"
               onClick={() => setSelectedDate(index)}
               className={`flex flex-col items-center py-3 px-4 rounded-xl min-w-[100px] transition-all ${selectedDate === index
                 ? "bg-gray-700 text-white shadow-md transform scale-105"
@@ -488,7 +552,7 @@ const BookSessionPage = () => {
                 </button>
               </div>
               <div className="p-4">
-                <BookingSidebar />
+                {BookingSidebar()}
               </div>
             </div>
           </div>
@@ -531,11 +595,11 @@ const BookSessionPage = () => {
           </div>
         )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <BookingBanner />
+          {BookingBanner()}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-8 space-y-8">
-              <PromoBanner />
+              {PromoBanner()}
               {/* Coach Profile Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
                 <div className="flex items-start gap-6">
@@ -834,12 +898,12 @@ const BookSessionPage = () => {
             {/* Sidebar - Booking Section */}
             <div className="hidden lg:block lg:col-span-4">
               <div className="sticky top-24">
-                <BookingSidebar />
+                {BookingSidebar()}
               </div>
             </div>
           </div>
         </div>
-        <BottomNav />
+        {BottomNav()}
       </div>
       <Footer />
     </>

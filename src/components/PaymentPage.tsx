@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft, CheckCircle, Calendar, Clock, Video, Download } from "lucide-react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 interface CardDetails {
   number: string;
@@ -10,14 +12,14 @@ interface CardDetails {
   holderName: string;
 }
 
-interface PaymentResponse {
-  success: boolean;
-  transactionId?: string;
-  message: string;
-}
+
 
 const PaymentPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const bookingDetails = location.state?.bookingDetails; // Get passed data
+
   const [activePaymentMethod, setActivePaymentMethod] = useState<
     "card" | "upi" | "netbanking" | "wallet"
   >("card");
@@ -38,15 +40,40 @@ const PaymentPage: React.FC = () => {
     "idle" | "success" | "error"
   >("idle");
   const [transactionId, setTransactionId] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Parse price from string (e.g. "₹500") if needed, or use number directly
+  const parsePrice = (price: string | number) => {
+    if (typeof price === "number") return price;
+    if (typeof price === "string")
+      return parseInt(price.replace(/[^0-9]/g, ""), 10) || 0;
+    return 0;
+  };
+
+  const basePrice = bookingDetails ? parsePrice(bookingDetails.price) : 0;
 
   const orderSummary = {
-    productName: "Premium Subscription",
-    plan: "Annual Plan",
-    basePrice: 3000,
-    discount: appliedDiscount ? 750 : 500,
-    gst: 270,
-    total: appliedDiscount ? 2520 : 2770,
+    productName: bookingDetails
+      ? `${bookingDetails.category} Mock Interview`
+      : "Premium Subscription",
+    plan: bookingDetails
+      ? `${bookingDetails.duration} Min Session with ${bookingDetails.expertName}`
+      : "Annual Plan",
+    basePrice: basePrice,
+    discount: appliedDiscount ? Math.floor(basePrice * 0.25) : 0, // 25% discount example
+    gst: Math.floor(basePrice * 0.18), // 18% GST example
+    get total() {
+      return this.basePrice - this.discount + this.gst;
+    },
   };
+
+  // Redirect if no booking details
+  React.useEffect(() => {
+    if (!bookingDetails) {
+      // navigate('/'); // Uncomment to enforce flow
+      console.warn("No booking details found directly accessing page");
+    }
+  }, [bookingDetails, navigate]);
 
   // Validation functions
   const validateCardDetails = (): boolean => {
@@ -141,61 +168,70 @@ const PaymentPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // Simulate API call with dummy data
-      const paymentData = {
-        method: activePaymentMethod,
-        amount: orderSummary.total,
-        ...(activePaymentMethod === "card" && { cardDetails }),
-        ...(activePaymentMethod === "upi" && { upiId }),
-        ...(activePaymentMethod === "netbanking" && { bank: selectedBank }),
-        ...(activePaymentMethod === "wallet" && { wallet: selectedWallet }),
+      // Simulate Payment Processing
+      // In a real app, you would integrate Razorpay/Stripe here.
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Calculate Start and End Time
+      let startTimeISO = new Date().toISOString();
+      let endTimeISO = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+      if (bookingDetails?.date && bookingDetails?.slot?.time) {
+        const dateObj = new Date(bookingDetails.date);
+        const timeRange = bookingDetails.slot.time; // "10:00 AM - 11:00 AM"
+        const [startStr] = timeRange.split(" - ");
+
+        // Parse time "10:00 AM"
+        const [time, period] = startStr.split(" ");
+        let [hours, minutes] = time.split(":").map(Number);
+
+        if (period === "PM" && hours !== 12) hours += 12;
+        if (period === "AM" && hours === 12) hours = 0;
+
+        dateObj.setHours(hours, minutes, 0, 0);
+        startTimeISO = dateObj.toISOString();
+
+        // End time based on duration
+        const duration = bookingDetails.duration || 60;
+        const endDateObj = new Date(dateObj.getTime() + duration * 60000);
+        endTimeISO = endDateObj.toISOString();
+      }
+
+      // 1. Create Session in Backend
+      const sessionPayload = {
+        expertId: bookingDetails?.expertId,
+        candidateId: user?.id || user?.userId, // Get from authenticated user
+        startTime: startTimeISO,
+        endTime: endTimeISO,
+        price: orderSummary.total,
+        topics: [bookingDetails?.category || "General Mock Interview"], // Default topic
+        status: "confirmed"
       };
 
-      // Simulate API response
-      const response: PaymentResponse = await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate 90% success rate
-          if (Math.random() > 0.1) {
-            resolve({
-              success: true,
-              transactionId: `TXN${Date.now()}`,
-              message: "Payment processed successfully",
-            });
-          } else {
-            reject({
-              success: false,
-              message: "Payment failed. Please try again.",
-            });
-          }
-        }, 2000);
-      });
+      console.log("Creating Session with Payload:", sessionPayload);
 
-      if (response.success) {
+      const sessionResponse = await axios.post('/api/sessions', sessionPayload);
+
+      if (sessionResponse.data?.success) {
         setPaymentStatus("success");
-        setTransactionId(response.transactionId || "");
-        
-        // Show SweetAlert success message
-        Swal.fire({
-          title: "Payment Successful 🎉",
-          text: "Your session has been booked successfully!",
-          icon: "success",
-          confirmButtonColor: "#374151",
-        }).then(() => {
-          // Navigate to previous page when OK is pressed
-          navigate('/my-sessions');
-        });
-        
-        // Reset form on success
+        setTransactionId(`TXN${Date.now()}`); // Mock TXN ID
+
+        // Show Success Modal
+        setShowSuccessModal(true);
         resetForm();
+      } else {
+        throw new Error("Failed to create session");
       }
-    } catch (error) {
+
+    } catch (error: any) {
+      console.error("Payment/Booking Error:", error);
       setPaymentStatus("error");
-      setErrors({ submit: (error as PaymentResponse).message });
-      
-      // Show SweetAlert error message
+      setErrors({ submit: error.message || "Payment failed. Please try again." });
+
+      // Show SweetAlert error message (keeping this for errors as requested only custom success)
       Swal.fire({
         title: "Payment Failed",
-        text: (error as PaymentResponse).message,
+        text: error.message || "Something went wrong processing your booking.",
         icon: "error",
         confirmButtonColor: "#dc2626",
       });
@@ -208,7 +244,7 @@ const PaymentPage: React.FC = () => {
     if (discountCode.trim() === "SAVE25") {
       setAppliedDiscount(true);
       setErrors({});
-      
+
       // Show discount applied success message
       Swal.fire({
         title: "Discount Applied!",
@@ -216,11 +252,11 @@ const PaymentPage: React.FC = () => {
         icon: "success",
         confirmButtonColor: "#16a34a",
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     } else {
       setErrors({ discount: "Invalid discount code" });
-      
+
       // Show discount error message
       Swal.fire({
         title: "Invalid Code",
@@ -228,7 +264,7 @@ const PaymentPage: React.FC = () => {
         icon: "error",
         confirmButtonColor: "#dc2626",
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
     }
   };
@@ -281,7 +317,7 @@ const PaymentPage: React.FC = () => {
             <ArrowLeft size={20} />
             <span className="font-medium">Back</span>
           </button>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Complete Your Payment
           </h1>
@@ -430,20 +466,25 @@ const PaymentPage: React.FC = () => {
                     key={method.id}
                     type="button"
                     onClick={() => setActivePaymentMethod(method.id)}
-                    className={`p-3 border-2 rounded-xl transition-all duration-200 flex flex-col items-center justify-center ${
-                      activePaymentMethod === method.id
-                        ? "border-gray-600 bg-gray-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
+                    className={`p-3 border-2 rounded-xl transition-all duration-200 flex flex-col items-center justify-center ${activePaymentMethod === method.id
+                      ? "border-gray-600 bg-gray-50"
+                      : "border-gray-200 hover:border-gray-300"
+                      }`}
                   >
-                    <div className={`mb-1 flex justify-center ${
-                      activePaymentMethod === method.id ? "text-gray-900" : "text-gray-600"
-                    }`}>
+                    <div
+                      className={`mb-1 flex justify-center ${activePaymentMethod === method.id
+                        ? "text-gray-900"
+                        : "text-gray-600"
+                        }`}
+                    >
                       {method.icon}
                     </div>
-                    <span className={`text-sm font-medium text-center ${
-                      activePaymentMethod === method.id ? "text-gray-900" : "text-gray-700"
-                    }`}>
+                    <span
+                      className={`text-sm font-medium text-center ${activePaymentMethod === method.id
+                        ? "text-gray-900"
+                        : "text-gray-700"
+                        }`}
+                    >
                       {method.label}
                     </span>
                   </button>
@@ -463,9 +504,8 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="1234 5678 9012 3456"
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                        errors.cardNumber ? "border-red-300" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.cardNumber ? "border-red-300" : "border-gray-300"
+                        }`}
                       value={cardDetails.number}
                       onChange={handleCardNumberChange}
                       maxLength={19}
@@ -485,9 +525,8 @@ const PaymentPage: React.FC = () => {
                       <input
                         type="text"
                         placeholder="MM/YY"
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                          errors.expiry ? "border-red-300" : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.expiry ? "border-red-300" : "border-gray-300"
+                          }`}
                         value={cardDetails.expiry}
                         onChange={handleExpiryChange}
                         maxLength={5}
@@ -505,9 +544,8 @@ const PaymentPage: React.FC = () => {
                       <input
                         type="text"
                         placeholder="123"
-                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                          errors.cvv ? "border-red-300" : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.cvv ? "border-red-300" : "border-gray-300"
+                          }`}
                         value={cardDetails.cvv}
                         onChange={(e) =>
                           setCardDetails({
@@ -532,9 +570,10 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="John Doe"
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                        errors.holderName ? "border-red-300" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.holderName
+                        ? "border-red-300"
+                        : "border-gray-300"
+                        }`}
                       value={cardDetails.holderName}
                       onChange={(e) =>
                         setCardDetails({
@@ -576,9 +615,8 @@ const PaymentPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="yourname@upi"
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                        errors.upiId ? "border-red-300" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.upiId ? "border-red-300" : "border-gray-300"
+                        }`}
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
                     />
@@ -628,9 +666,8 @@ const PaymentPage: React.FC = () => {
                       Select Bank
                     </label>
                     <select
-                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                        errors.bank ? "border-red-300" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.bank ? "border-red-300" : "border-gray-300"
+                        }`}
                       value={selectedBank}
                       onChange={(e) => setSelectedBank(e.target.value)}
                     >
@@ -652,11 +689,10 @@ const PaymentPage: React.FC = () => {
                         key={bank}
                         type="button"
                         onClick={() => setSelectedBank(bank)}
-                        className={`p-3 border-2 rounded-xl transition-all flex items-center justify-center ${
-                          selectedBank === bank
-                            ? "border-gray-600 bg-gray-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
+                        className={`p-3 border-2 rounded-xl transition-all flex items-center justify-center ${selectedBank === bank
+                          ? "border-gray-600 bg-gray-50"
+                          : "border-gray-200 hover:border-gray-300"
+                          }`}
                       >
                         <span className="text-sm font-medium text-gray-700 text-center">
                           {bank}
@@ -676,15 +712,17 @@ const PaymentPage: React.FC = () => {
                         key={wallet}
                         type="button"
                         onClick={() => setSelectedWallet(wallet)}
-                        className={`p-4 border-2 rounded-xl transition-all flex flex-col items-center justify-center ${
-                          selectedWallet === wallet
-                            ? "border-gray-600 bg-gray-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
+                        className={`p-4 border-2 rounded-xl transition-all flex flex-col items-center justify-center ${selectedWallet === wallet
+                          ? "border-gray-600 bg-gray-50"
+                          : "border-gray-200 hover:border-gray-300"
+                          }`}
                       >
-                        <div className={`mb-2 flex justify-center ${
-                          selectedWallet === wallet ? "text-gray-900" : "text-gray-600"
-                        }`}>
+                        <div
+                          className={`mb-2 flex justify-center ${selectedWallet === wallet
+                            ? "text-gray-900"
+                            : "text-gray-600"
+                            }`}
+                        >
                           <svg
                             className="w-6 h-6"
                             fill="none"
@@ -699,9 +737,12 @@ const PaymentPage: React.FC = () => {
                             />
                           </svg>
                         </div>
-                        <span className={`text-sm font-medium text-center ${
-                          selectedWallet === wallet ? "text-gray-900" : "text-gray-700"
-                        }`}>
+                        <span
+                          className={`text-sm font-medium text-center ${selectedWallet === wallet
+                            ? "text-gray-900"
+                            : "text-gray-700"
+                            }`}
+                        >
                           {wallet}
                         </span>
                       </button>
@@ -722,9 +763,8 @@ const PaymentPage: React.FC = () => {
                   <input
                     type="text"
                     placeholder="Enter discount code"
-                    className={`flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${
-                      errors.discount ? "border-red-300" : "border-gray-300"
-                    }`}
+                    className={`flex-1 px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all ${errors.discount ? "border-red-300" : "border-gray-300"
+                      }`}
                     value={discountCode}
                     onChange={(e) => setDiscountCode(e.target.value)}
                   />
@@ -837,6 +877,7 @@ const PaymentPage: React.FC = () => {
 
               {/* Download Invoice */}
               <button className="w-full border border-gray-600 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-50 transition-colors font-medium mb-4">
+                <Download className="w-4 h-4 inline-block mr-2" />
                 Download Proforma Invoice
               </button>
 
@@ -871,6 +912,74 @@ const PaymentPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+
+              <div className="flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                  <CheckCircle className="w-10 h-10 text-green-600" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+                <p className="text-gray-600 mb-8">
+                  Your session has been successfully scheduled. We've sent the details to your email.
+                </p>
+
+                <div className="bg-gray-50 rounded-2xl p-6 w-full mb-8 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 last:border-0 last:mb-0 last:pb-0">
+                    <div className="flex items-center text-gray-600">
+                      <Calendar className="w-5 h-5 mr-3 text-indigo-500" />
+                      <span className="text-sm font-medium">Date</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-sm">
+                      {bookingDetails?.date ? new Date(bookingDetails.date).toLocaleDateString() : "TBD"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 last:border-0 last:mb-0 last:pb-0">
+                    <div className="flex items-center text-gray-600">
+                      <Clock className="w-5 h-5 mr-3 text-indigo-500" />
+                      <span className="text-sm font-medium">Time</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-sm">
+                      {bookingDetails?.slot?.time || "TBD"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-gray-600">
+                      <Video className="w-5 h-5 mr-3 text-indigo-500" />
+                      <span className="text-sm font-medium">Expert</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-sm">
+                      {bookingDetails?.expertName || "Expert"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 w-full">
+                  <button
+                    onClick={() => navigate("/my-sessions")}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-violet-700 shadow-lg shadow-indigo-200 transform transition-all hover:-translate-y-0.5"
+                  >
+                    Go to My Sessions
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/")}
+                    className="w-full bg-white text-gray-700 py-3.5 px-6 rounded-xl font-medium border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                  >
+                    Back to Home
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

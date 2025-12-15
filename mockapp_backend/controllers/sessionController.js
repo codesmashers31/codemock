@@ -1,5 +1,32 @@
 import * as sessionService from '../services/sessionService.js';
 import * as meetingService from '../services/meetingService.js';
+import { v4 as uuidv4 } from 'uuid'; // Ensure you have uuid or use crypto
+
+export const createSession = async (req, res) => {
+    try {
+        const { expertId, candidateId, userId, startTime, endTime, topics, price, status } = req.body;
+
+        // Use provided ID or generate one
+        const sessionId = req.body.sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const sessionData = {
+            sessionId,
+            expertId,
+            candidateId: candidateId || userId, // Handle alias
+            startTime: new Date(startTime),
+            endTime: new Date(endTime),
+            topics: topics || [],
+            price: price || 0,
+            status: status || 'confirmed'
+        };
+
+        const session = await sessionService.createSession(sessionData);
+        res.status(201).json({ success: true, message: "Session created successfully", data: session });
+    } catch (error) {
+        console.error("Create Session Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 export const getSession = async (req, res) => {
     try {
@@ -24,11 +51,80 @@ export const getSessionsByExpert = async (req, res) => {
     }
 };
 
+export const getSessionsByCandidate = async (req, res) => {
+    try {
+        const { candidateId } = req.params;
+        const sessions = await sessionService.getSessionsByCandidateId(candidateId);
+
+        // Import Expert and mongoose
+        const Expert = (await import('../models/expertModel.js')).default;
+        const mongoose = (await import('mongoose')).default;
+
+        // Enrich sessions with expert details
+        const enrichedSessions = await Promise.all(
+            sessions.map(async (session) => {
+                let expert = null;
+
+                // Try multiple strategies to find the expert
+                // Strategy 1: Direct userId match (if expertId is already the userId)
+                expert = await Expert.findOne({ userId: session.expertId });
+
+                // Strategy 2: If expertId looks like an ObjectId, try converting
+                if (!expert && mongoose.Types.ObjectId.isValid(session.expertId)) {
+                    expert = await Expert.findOne({ userId: new mongoose.Types.ObjectId(session.expertId) });
+                }
+
+                // Strategy 3: Try finding by _id in case expertId is the expert document's _id
+                if (!expert && mongoose.Types.ObjectId.isValid(session.expertId)) {
+                    expert = await Expert.findById(session.expertId);
+                }
+
+                console.log('Session expertId:', session.expertId);
+                console.log('Found expert:', expert ? 'YES' : 'NO');
+                if (expert) {
+                    console.log('Expert details:', {
+                        userId: expert.userId,
+                        name: expert.personalInformation?.userName,
+                        title: expert.professionalDetails?.title,
+                        company: expert.professionalDetails?.company
+                    });
+                }
+
+                return {
+                    ...session.toObject(),
+                    expertDetails: expert ? {
+                        name: expert.personalInformation?.userName || 'Unknown Expert',
+                        role: expert.professionalDetails?.title || 'Expert',
+                        company: expert.professionalDetails?.company || 'N/A',
+                        category: expert.personalInformation?.category || 'General',
+                        profileImage: expert.profileImage || null,
+                        rating: expert.metrics?.avgRating || 4.8,
+                        reviews: expert.metrics?.totalReviews || 0
+                    } : {
+                        name: 'Unknown Expert',
+                        role: 'Expert',
+                        company: 'N/A',
+                        category: 'General',
+                        profileImage: null,
+                        rating: 0,
+                        reviews: 0
+                    }
+                };
+            })
+        );
+
+        res.json(enrichedSessions);
+    } catch (error) {
+        console.error('Get Sessions By Candidate Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Seed restricted test session (Dev only)
 export const devSeedSession = async (req, res) => {
     // Check dev flag if needed. For now assuming route protection or local env.
     const { expertEmail, candidateEmail, startTime, endTime } = req.body;
-    
+
     if (!expertEmail || !candidateEmail) {
         return res.status(400).json({ message: "Expert and Candidate emails required" });
     }
@@ -51,7 +147,7 @@ export const getUserSessions = async (req, res) => {
         // Verify that the requesting user matches the param ID (Security check)
         // In a real app, req.user.id from auth middleware should match userId
         // For this mock, we trust the caller BUT we strictly query by this ID.
-        
+
         const sessions = await sessionService.getSessionsForUser(userId, role);
         res.json(sessions);
     } catch (error) {
@@ -62,7 +158,7 @@ export const getUserSessions = async (req, res) => {
 export const joinSession = async (req, res) => {
     const { sessionId } = req.params;
     const { userId } = req.body; // In real app, get from req.user
-    
+
     if (!userId) return res.status(401).json({ message: "User ID required" });
 
     try {
@@ -78,21 +174,21 @@ export const joinSession = async (req, res) => {
         const now = new Date();
         const start = new Date(session.startTime);
         const end = new Date(session.endTime);
-        
+
         // Allow joining 10 mins early
-        const bufferStart = new Date(start.getTime() - 10 * 60 * 1000); 
+        const bufferStart = new Date(start.getTime() - 10 * 60 * 1000);
 
         if (now < bufferStart) {
-            return res.status(400).json({ 
-                message: "Session has not started yet.", 
-                startTime: start 
+            return res.status(400).json({
+                message: "Session has not started yet.",
+                startTime: start
             });
         }
-        
+
         if (now > end) {
-            return res.status(400).json({ 
-                message: "Session has ended.", 
-                endTime: end 
+            return res.status(400).json({
+                message: "Session has ended.",
+                endTime: end
             });
         }
 

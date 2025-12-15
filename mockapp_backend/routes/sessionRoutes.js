@@ -12,7 +12,9 @@ router.get('/user/:userId/role/:role', sessionController.getUserSessions);
 router.post('/:sessionId/join', sessionController.joinSession);
 
 router.get('/:sessionId', sessionController.getSession);
+router.get('/candidate/:candidateId', sessionController.getSessionsByCandidate);
 router.get('/expert/:expertId', sessionController.getSessionsByExpert);
 router.post('/seed', sessionController.seedSession);
+router.post('/', sessionController.createSession);
 
 export default router;

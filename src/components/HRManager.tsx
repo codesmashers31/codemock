@@ -178,7 +178,7 @@ const HRManager: React.FC = () => {
                     {hr.status}
                   </span>
                 </div>
-                
+
                 {hr.specialization.length > 0 && (
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-1">
@@ -227,8 +227,8 @@ const HRManager: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         title={
           modalType === 'create' ? 'Add HR Personnel' :
-          modalType === 'edit' ? 'Edit HR Personnel' :
-          'HR Personnel Details'
+            modalType === 'edit' ? 'Edit HR Personnel' :
+              'HR Personnel Details'
         }
       >
         <HRForm

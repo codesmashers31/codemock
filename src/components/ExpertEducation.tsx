@@ -10,7 +10,7 @@ const ExpertEducation = () => {
     // Fallback to empty string if undefined to avoid breaking API calls, but effect will skip if no user
     const userId = user?.id || "";
 
-    const initialProfile = { education: [] };
+    const initialProfile = { education: [] as any[] };
     const [profile, setProfile] = useState(initialProfile);
     const [loading, setLoading] = useState(true);
 
@@ -20,7 +20,7 @@ const ExpertEducation = () => {
             education: [...p.education, { degree: "", institution: "", field: "", start: "", end: "" }]
         }));
 
-    const updateEducation = (idx, field, value) => {
+    const updateEducation = (idx: number, field: string, value: string) => {
         setProfile((p) => {
             const ed = [...p.education];
             ed[idx] = { ...ed[idx], [field]: value };
@@ -37,14 +37,12 @@ const ExpertEducation = () => {
 
         const fetchEducation = async () => {
             try {
-                const response = await axios.get("http://localhost:3000/api/expert/education", {
-                    headers: { userid: userId }
-                });
+                const response = await axios.get("/api/expert/education");
 
                 if (response.data.success) {
                     setProfile({ education: response.data.data });
                 }
-            } catch (err) {
+            } catch (err: any) {
                 if (err.response && err.response.status === 404) {
                     // alert(err.response.data.message); // Personal info missing - suppressing alert on load
                     console.log("Profile not found or empty");
@@ -68,9 +66,8 @@ const ExpertEducation = () => {
 
         try {
             const response = await axios.put(
-                "http://localhost:3000/api/expert/education",
-                { education: profile.education },
-                { headers: { userid: userId } }
+                "/api/expert/education",
+                { education: profile.education }
             );
 
             if (response.data.success) {
@@ -85,7 +82,7 @@ const ExpertEducation = () => {
     };
 
     // ---------------- DELETE education ----------------
-    const removeEducation = async (idx) => {
+    const removeEducation = async (idx: number) => {
         try {
             // Optimistically update local state first
             setProfile((p) => ({
@@ -95,8 +92,7 @@ const ExpertEducation = () => {
 
             // Call DELETE endpoint to remove from DB
             const response = await axios.delete(
-                `http://localhost:3000/api/expert/education/${idx}`,
-                { headers: { userid: userId } }
+                `/api/expert/education/${idx}`
             );
 
             if (!response.data.success) {
@@ -127,7 +123,7 @@ const ExpertEducation = () => {
                 <div className="text-center text-sm text-gray-500 py-4">No education entries yet.</div>
             ) : (
                 <div className="space-y-4">
-                    {profile.education.map((edu, i) => (
+                    {profile.education.map((edu: any, i: number) => (
                         <div key={i} className="border border-gray-200 rounded-lg p-10 relative bg-gray-50">
                             <IconButton onClick={() => removeEducation(i)} className="absolute top-2 right-2">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

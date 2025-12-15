@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, MultiSelect, PrimaryButton } from "../pages/ExpertDashboard";
 import { useAuth } from "../context/AuthContext";
@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 const SkillsAndExpertise = () => {
   // const user = "69255389e1a38f2afd8f663d"; // Replace with dynamic userId
   const { user } = useAuth();
-  const user_id = user._id;
 
   const DOMAIN_OPTIONS = [
     { value: "recruiting", label: "Recruiting" },
@@ -71,15 +70,13 @@ const SkillsAndExpertise = () => {
     const fetchSkills = async () => {
       try {
         // Fetch skills
-        const skillsRes = await axios.get("http://localhost:3000/api/expert/skills", {
-          headers: { userid: user_id },
-        });
+        const skillsRes = await axios.get("/api/expert/skills");
 
         setProfile((p) => ({
           ...p,
           skills: skillsRes.data?.data || { mode: "", domains: [], tools: [], languages: [] },
         }));
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
       }
     };
@@ -88,7 +85,7 @@ const SkillsAndExpertise = () => {
   }, []);
 
   // ------------------ Array updater ------------------
-  const updateSkillsArray = (field, values) => {
+  const updateSkillsArray = (field: string, values: string[]) => {
     setProfile((p) => ({
       ...p,
       skills: { ...p.skills, [field]: values },
@@ -100,15 +97,14 @@ const SkillsAndExpertise = () => {
     try {
       // Save skills
       await axios.put(
-        "http://localhost:3000/api/expert/skills",
+        "/api/expert/skills",
         {
           skillsAndExpertise: profile.skills
-        },
-        { headers: { userid: user_id } }
+        }
       );
 
       alert("Skills saved successfully!");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       const errorMsg = err.response?.data?.message || "Error saving skills!";
       alert(errorMsg);

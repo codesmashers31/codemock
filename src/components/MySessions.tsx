@@ -1,12 +1,12 @@
 import { SetStateAction, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Calendar, 
-  Video, 
-  User, 
-  Clock, 
-  MapPin, 
-  CheckCircle, 
+import {
+  Calendar,
+  Video,
+  User,
+  Clock,
+  MapPin,
+  CheckCircle,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +37,10 @@ type Session = {
   duration: string;
   expertise: string[];
   avatarColor: string;
+  profileImage?: string | null;
+  startTime?: string;
+  endTime?: string;
+  sessionId?: string;
 };
 
 const MySessions = () => {
@@ -52,226 +56,148 @@ const MySessions = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    // 1. Define Static Dummy Data (The "Booked Experts")
-    const dummySessions: Session[] = [
-      {
-        id: 101, // Changed IDs to avoid conflict with backend test ID (if any)
-        expert: "Rajesh Kumar",
-        role: "Senior Software Engineer",
-        company: "Google",
-        category: "IT",
-        location: "Chennai, India",
-        date: "2025-10-01",
-        time: "10:30 AM",
-        price: "₹999",
-        status: "Confirmed",
-        meetLink: "https://meet.google.com/xyz-1234",
-        rating: 4.8,
-        reviews: 127,
-        duration: "60 minutes",
-        expertise: ["React", "Node.js", "System Design"],
-        avatarColor: "from-blue-500 to-blue-600"
-      },
-      {
-        id: 102,
-        expert: "Anitha R",
-        role: "HR Specialist",
-        company: "Microsoft",
-        category: "HR",
-        location: "Bangalore, India",
-        date: "2025-10-05",
-        time: "3:00 PM",
-        price: "₹799",
-        status: "Upcoming",
-        meetLink: "https://meet.google.com/abc-5678",
-        rating: 4.9,
-        reviews: 89,
-        duration: "45 minutes",
-        expertise: ["Interview Prep", "Career Growth", "Resume"],
-        avatarColor: "from-purple-500 to-purple-600"
-      },
-      {
-        id: 103,
-        expert: "Mike Johnson",
-        role: "Product Manager",
-        company: "Amazon",
-        category: "Product",
-        location: "Remote",
-        date: "2025-10-08",
-        time: "11:00 AM",
-        price: "₹1299",
-        status: "Completed",
-        meetLink: "https://meet.google.com/def-9012",
-        rating: 4.7,
-        reviews: 203,
-        duration: "60 minutes",
-        expertise: ["Product Strategy", "UX", "Roadmapping"],
-        avatarColor: "from-gray-600 to-gray-700"
-      },
-      {
-        id: 104,
-        expert: "Sarah Chen",
-        role: "Data Scientist",
-        company: "Meta",
-        category: "Data Science",
-        location: "Hyderabad, India",
-        date: "2025-10-12",
-        time: "2:00 PM",
-        price: "₹1499",
-        status: "Confirmed",
-        meetLink: "https://meet.google.com/ghi-3456",
-        rating: 4.9,
-        reviews: 156,
-        duration: "60 minutes",
-        expertise: ["Machine Learning", "Python", "AI"],
-        avatarColor: "from-green-500 to-green-600"
-      },
-      {
-        id: 105,
-        expert: "David Wilson",
-        role: "Frontend Architect",
-        company: "Netflix",
-        category: "IT",
-        location: "Remote",
-        date: "2025-10-15",
-        time: "4:30 PM",
-        price: "₹1799",
-        status: "Upcoming",
-        meetLink: "https://meet.google.com/jkl-7890",
-        rating: 4.8,
-        reviews: 98,
-        duration: "60 minutes",
-        expertise: ["React", "TypeScript", "Performance"],
-        avatarColor: "from-red-500 to-red-600"
-      },
-      {
-        id: 106,
-        expert: "Priya Sharma",
-        role: "Career Coach",
-        company: "Self Employed",
-        category: "Career",
-        location: "Delhi, India",
-        date: "2025-10-18",
-        time: "1:00 PM",
-        price: "₹899",
-        status: "Confirmed",
-        meetLink: "https://meet.google.com/mno-2345",
-        rating: 4.6,
-        reviews: 67,
-        duration: "45 minutes",
-        expertise: ["Career Transition", "Leadership", "Soft Skills"],
-        avatarColor: "from-indigo-500 to-indigo-600"
-      }
-    ];
-
-    // 2. Fetch Dynamic Test Data & Merge
     const fetchSessions = async () => {
-        try {
-            // Restricted Candidate ID
-            const candidateId = user?.id || "";
-            const res = await fetch(`http://localhost:3000/api/sessions/user/${candidateId}/role/candidate`);
-            const data = await res.json();
-            
-            let allSessions = [...dummySessions];
-
-            if (Array.isArray(data) && data.length > 0) {
-                 const backendSessions = data.map((s: any) => ({
-                    id: s._id || 999,
-                    expert: "Restricted Test Expert",
-                    role: "Strict Mode",
-                    company: "CodeMock",
-                    category: "IT",
-                    location: "Strict Server",
-                    date: new Date(s.startTime).toLocaleDateString(),
-                    time: new Date(s.startTime).toLocaleTimeString(),
-                    price: "PRIVATE",
-                    status: s.status,
-                    meetLink: "",
-                    rating: 5.0,
-                    reviews: 0,
-                    duration: "60 minutes",
-                    expertise: s.topics || ["Live"],
-                    avatarColor: "from-red-500 to-pink-600",
-                    sessionId: s.sessionId,
-                    startTime: s.startTime,
-                    endTime: s.endTime
-                }));
-                allSessions = [...backendSessions, ...dummySessions];
-            }
-            setSessions(allSessions);
-            setFilteredSessions(allSessions);
-        } catch (err) {
-            console.error("Failed to fetch sessions", err);
-            setSessions(dummySessions);
-            setFilteredSessions(dummySessions);
+      try {
+        const candidateId = user?.id;
+        if (!candidateId) {
+          console.warn("No user ID available");
+          setSessions([]);
+          setFilteredSessions([]);
+          return;
         }
+
+        const res = await fetch(`http://localhost:3000/api/sessions/candidate/${candidateId}`);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          console.error("Invalid response format:", data);
+          setSessions([]);
+          setFilteredSessions([]);
+          return;
+        }
+
+        // Map backend sessions to frontend Session type
+        const mappedSessions: Session[] = data.map((s: any) => {
+          const expert = s.expertDetails || {};
+          const startDate = new Date(s.startTime);
+          const endDate = new Date(s.endTime);
+          const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / 60000);
+
+          // Generate avatar color based on expert name
+          const colors = [
+            "from-blue-500 to-blue-600",
+            "from-purple-500 to-purple-600",
+            "from-green-500 to-green-600",
+            "from-red-500 to-red-600",
+            "from-indigo-500 to-indigo-600",
+            "from-pink-500 to-pink-600"
+          ];
+          const colorIndex = (expert.name || "").length % colors.length;
+
+          return {
+            id: s._id,
+            expert: expert.name || "Unknown Expert",
+            role: expert.role || "Expert",
+            company: expert.company || "N/A",
+            category: expert.category || "General",
+            location: "Remote",
+            date: startDate.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+            time: startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            price: s.price ? `₹${s.price}` : "N/A",
+            status: (s.status.charAt(0).toUpperCase() + s.status.slice(1)) as Session["status"],
+            meetLink: s.meetLink || "",
+            rating: expert.rating || 4.8,
+            reviews: expert.reviews || 0,
+            duration: `${durationMinutes} minutes`,
+            expertise: s.topics || ["General"],
+            avatarColor: colors[colorIndex],
+            profileImage: expert.profileImage,
+            sessionId: s.sessionId,
+            startTime: s.startTime,
+            endTime: s.endTime
+          };
+        });
+
+        setSessions(mappedSessions);
+        setFilteredSessions(mappedSessions);
+      } catch (err) {
+        console.error("Failed to fetch sessions:", err);
+        setSessions([]);
+        setFilteredSessions([]);
+      }
     };
-    fetchSessions(); 
-  }, []);
+
+    fetchSessions();
+  }, [user?.id]);
 
   const handleJoinMeeting = async (session: any) => {
-    const candidateId = user?.id || "";  
+    const candidateId = user?.id || "";
     try {
-        const res = await fetch(`http://localhost:3000/api/sessions/${session.sessionId}/join`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: candidateId })
-        });
-        
-        const data = await res.json();
-        
-        if (res.ok && data.permitted) {
-            navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate&userId=${candidateId}`);
-        } else {
-            alert(data.message || "Cannot join session at this time.");
-        }
+      const res = await fetch(`http://localhost:3000/api/sessions/${session.sessionId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: candidateId })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.permitted) {
+        navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate&userId=${candidateId}`);
+      } else {
+        alert(data.message || "Cannot join session at this time.");
+      }
     } catch (error) {
-        console.error("Join Error:", error);
-        alert("Failed to join session.");
+      console.error("Join Error:", error);
+      alert("Failed to join session.");
     }
   };
 
   const isSessionActive = (session: any) => {
-      const now = new Date();
-      let start, end;
+    const now = new Date();
+    let start, end;
 
-      if (session.startTime && session.endTime) {
-          // Backend format (ISO strings)
-          start = new Date(session.startTime);
-          end = new Date(session.endTime);
-      } else if (session.date && session.time) {
-          // Dummy data format ("YYYY-MM-DD", "HH:MM AM/PM")
-          // Parse date string + time string
-          const dateStr = session.date; // "2025-10-01"
-          const timeStr = session.time; // "10:30 AM"
-          const dateTimeStr = `${dateStr} ${timeStr}`;
-          start = new Date(dateTimeStr);
-          
-          // Assume 1 hour duration for dummy if parsing works, else fail safe
-          if (!isNaN(start.getTime())) {
-             end = new Date(start.getTime() + 60 * 60 * 1000);
-          } else {
-             return false; // Invalid date
-          }
+    if (session.startTime && session.endTime) {
+      // Backend format (ISO strings)
+      start = new Date(session.startTime);
+      end = new Date(session.endTime);
+    } else if (session.date && session.time) {
+      // Dummy data format ("YYYY-MM-DD", "HH:MM AM/PM")
+      // Parse date string + time string
+      const dateStr = session.date; // "2025-10-01"
+      const timeStr = session.time; // "10:30 AM"
+      const dateTimeStr = `${dateStr} ${timeStr}`;
+      start = new Date(dateTimeStr);
+
+      // Assume 1 hour duration for dummy if parsing works, else fail safe
+      if (!isNaN(start.getTime())) {
+        end = new Date(start.getTime() + 60 * 60 * 1000);
       } else {
-          return false;
+        return false; // Invalid date
       }
+    } else {
+      return false;
+    }
 
-      // Check current time window
-      // Allow joining 10 mins before start until end
-      const bufferStart = new Date(start.getTime() - 10 * 60 * 1000); 
-      return now >= bufferStart && now < end;
+    // Check current time window
+    // Allow joining 10 mins before start until end
+    const bufferStart = new Date(start.getTime() - 10 * 60 * 1000);
+    return now >= bufferStart && now < end;
   };
 
   // Filter sessions based on search and filters
   useEffect(() => {
     let filtered = sessions.filter(session => {
       const matchesSearch = session.expert.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          session.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          session.category.toLowerCase().includes(searchTerm.toLowerCase());
+        session.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        session.category.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === "all" || session.status === statusFilter;
       const matchesCategory = categoryFilter === "all" || session.category === categoryFilter;
-      
+
       return matchesSearch && matchesStatus && matchesCategory;
     });
     setFilteredSessions(filtered);
@@ -318,6 +244,48 @@ const MySessions = () => {
       default:
         return "📝";
     }
+  };
+
+  // Countdown Timer Component
+  const CountdownTimer = ({ startTime }: { startTime: string }) => {
+    const [timeLeft, setTimeLeft] = useState("");
+
+    useEffect(() => {
+      const updateCountdown = () => {
+        const now = new Date().getTime();
+        const sessionStart = new Date(startTime).getTime();
+        const distance = sessionStart - now;
+
+        if (distance < 0) {
+          setTimeLeft("Session Started");
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        if (days > 0) {
+          setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+        } else {
+          setTimeLeft(`${minutes}m ${seconds}s`);
+        }
+      };
+
+      updateCountdown();
+      const interval = setInterval(updateCountdown, 1000);
+      return () => clearInterval(interval);
+    }, [startTime]);
+
+    return (
+      <div className="flex items-center gap-2 text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg">
+        <Clock className="w-4 h-4 text-gray-600" />
+        <span>{timeLeft}</span>
+      </div>
+    );
   };
 
   return (
@@ -409,11 +377,11 @@ const MySessions = () => {
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm text-gray-500">Active filters:</span>
-                  
+
                   {searchTerm && (
                     <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded border border-blue-200">
                       <span>Search: "{searchTerm}"</span>
-                      <button 
+                      <button
                         onClick={() => setSearchTerm("")}
                         className="ml-1 hover:text-blue-800"
                       >
@@ -421,11 +389,11 @@ const MySessions = () => {
                       </button>
                     </div>
                   )}
-                  
+
                   {statusFilter !== 'all' && (
                     <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-sm rounded border border-green-200">
                       <span>Status: {statusFilter}</span>
-                      <button 
+                      <button
                         onClick={() => setStatusFilter("all")}
                         className="ml-1 hover:text-green-800"
                       >
@@ -433,11 +401,11 @@ const MySessions = () => {
                       </button>
                     </div>
                   )}
-                  
+
                   {categoryFilter !== 'all' && (
                     <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded border border-purple-200">
                       <span>Category: {categoryFilter}</span>
-                      <button 
+                      <button
                         onClick={() => setCategoryFilter("all")}
                         className="ml-1 hover:text-purple-800"
                       >
@@ -445,7 +413,7 @@ const MySessions = () => {
                       </button>
                     </div>
                   )}
-                  
+
                   <button
                     onClick={() => {
                       setSearchTerm("");
@@ -469,7 +437,7 @@ const MySessions = () => {
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No sessions found</h3>
               <p className="text-gray-500 mb-6">Try adjusting your search criteria</p>
-              <button 
+              <button
                 onClick={() => {
                   setSearchTerm("");
                   setStatusFilter("all");
@@ -487,10 +455,22 @@ const MySessions = () => {
                   key={session.id}
                   className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 overflow-hidden group"
                 >
-                  {/* Header */}
-                  <div className={`bg-gradient-to-r ${session.avatarColor} p-5 text-white`}>
+                  {/* Header - Gray Theme */}
+                  <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-5 text-white">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold border border-white/30">
+                      {session.profileImage ? (
+                        <img
+                          src={session.profileImage}
+                          alt={session.expert}
+                          className="w-14 h-14 rounded-lg object-cover border-2 border-white/30 shadow-md"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-14 h-14 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-xl border border-white/30 ${session.profileImage ? 'hidden' : ''}`}>
                         {session.expert.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -514,6 +494,13 @@ const MySessions = () => {
                         <span className="text-gray-400 text-xs">({session.reviews})</span>
                       </div>
                     </div>
+
+                    {/* Countdown Timer for Upcoming Sessions */}
+                    {(session.status === "Upcoming" || session.status === "Confirmed" || session.status === "confirmed") && session.startTime && (
+                      <div className="mb-4">
+                        <CountdownTimer startTime={session.startTime} />
+                      </div>
+                    )}
 
                     {/* Session Info */}
                     <div className="space-y-3 mb-4">
@@ -556,15 +543,14 @@ const MySessions = () => {
                     <div className="flex items-center justify-between">
                       <div className="text-xl font-bold text-gray-900">{session.price}</div>
                       <div className="flex gap-2">
-{session.status === "Upcoming" || session.status === "Confirmed" || session.status === "confirmed" ? (
+                        {session.status === "Upcoming" || session.status === "Confirmed" || session.status === "confirmed" ? (
                           <button
                             onClick={() => handleJoinMeeting(session)}
                             disabled={!isSessionActive(session)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-                                isSessionActive(session) 
-                                ? "bg-gray-900 text-white hover:bg-gray-800" 
-                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            }`}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${isSessionActive(session)
+                              ? "bg-gray-900 text-white hover:bg-gray-800"
+                              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                              }`}
                           >
                             <Video className="w-4 h-4" />
                             Join
@@ -592,11 +578,10 @@ const MySessions = () => {
               <button
                 onClick={prevPage}
                 disabled={currentPage === 1}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                  currentPage === 1
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${currentPage === 1
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                  }`}
               >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
@@ -607,11 +592,10 @@ const MySessions = () => {
                   <button
                     key={number}
                     onClick={() => paginate(number)}
-                    className={`w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors ${
-                      currentPage === number
-                        ? "bg-gray-900 text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className={`w-8 h-8 rounded flex items-center justify-center text-sm font-medium transition-colors ${currentPage === number
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                      }`}
                   >
                     {number}
                   </button>
@@ -621,11 +605,10 @@ const MySessions = () => {
               <button
                 onClick={nextPage}
                 disabled={currentPage === totalPages}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                  currentPage === totalPages
-                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${currentPage === totalPages
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                  }`}
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
