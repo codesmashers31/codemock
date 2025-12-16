@@ -7,7 +7,7 @@ export const getSessionsForUser = async (userId, role) => {
     // Only return Upcoming or Confirmed sessions (active ones)
     return await Session.find({
         ...query,
-        status: { $in: ['Upcoming', 'confirmed', 'live'] }
+        status: { $in: ['upcoming', 'confirmed', 'live'] }
     }).sort({ startTime: 1 });
 };
 

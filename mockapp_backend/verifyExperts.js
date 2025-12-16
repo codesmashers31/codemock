@@ -6,8 +6,8 @@ dotenv.config();
 // MongoDB Connection
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI_LOCAL || 'mongodb://localhost:27017/mockdata');
-        console.log('✅ MongoDB Connected to:', process.env.MONGO_URI_LOCAL || 'mongodb://localhost:27017/mockdata');
+        await mongoose.connect(process.env.MONGO_URI_LOCAL || process.env.MONGO_URI || 'mongodb://localhost:27017/mockdata');
+        console.log('✅ MongoDB Connected to:', process.env.MONGO_URI_LOCAL || process.env.MONGO_URI || 'mongodb://localhost:27017/mockdata');
     } catch (error) {
         console.error('❌ MongoDB Connection Error:', error);
         process.exit(1);

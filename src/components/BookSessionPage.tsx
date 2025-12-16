@@ -20,6 +20,7 @@ const BookSessionPage = () => {
 
   // Use expertId from state, or fallback to profile.id if available
   const expertId = stateExpertId || existingProfile?.id;
+  
 
   const [profile, setProfile] = useState<Profile | null>(existingProfile || null);
   const [loading, setLoading] = useState(!existingProfile);
@@ -33,6 +34,8 @@ const BookSessionPage = () => {
           // Since there isn't a direct public by-ID endpoint, we fetch all verified experts and filter
           // Optimized approach would be adding a specific endpoint in backend
           const response = await axios.get("http://localhost:3000/api/expert/verified");
+          console.log(response.data);
+          
           if (response.data?.success && response.data?.data) {
             const foundExpert = response.data.data.find((e: any) =>
               e._id === expertId || e.userId === expertId
@@ -84,10 +87,11 @@ const BookSessionPage = () => {
 
   const showPaymentPage = () => {
     if (!profile) return;
+    
     navigate("/payment", {
       state: {
         bookingDetails: {
-          expertId: profile.id, // Ensure we have an ID
+          expertId: expertId, // Ensure we have an ID
           expertName: profile.name,
           expertRole: profile.role,
           date: dates[selectedDate],

@@ -28,6 +28,7 @@ type Category = "IT" | "HR" | "Business" | "Design" | "Marketing" | "Finance" | 
 
 interface Profile {
   id: string;
+  expertID: string;
   name: string;
   role: string;
   industry: string;
@@ -74,10 +75,11 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   const navigate = useNavigate();
 
   const handleBookNow = () => {
+    console.log(profile);
     navigate(`/book-session`, {
       state: {
         profile: profile,
-        expertId: profile.id
+        expertId: profile.expertID
       }
     });
   };
@@ -612,6 +614,7 @@ export default function CoachSessionCard() {
             // Create profile object from database data
             return {
               id: expert._id || expert.userId || Math.random().toString(),
+              expertID: expert.userId,
               name: expert.personalInformation?.userName || "Expert",
               role: role,
               industry: industry,
