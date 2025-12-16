@@ -1,8 +1,6 @@
-// src/App.tsx
-import React from "react";
 import { Toaster } from "./components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -22,19 +20,37 @@ import LiveMeeting from "./pages/LiveMeeting";
 import ScrollToTop from "./ScrollToTop";
 import UserProfile from "./pages/UserProfile";
 
+
+
+import PendingExpertsTable from "./components/PendingExpertsTable";
+
+import RejectedExpertsTable from "./components/RejectedExpertsTable";
+
+import CategoriesPanel from "./components/CategoriesPanel";
+import ReportsPanel from "./components/ReportsPanel";
+import AdminDashboardIndex from "./components/AdminDashboardIndex";
+import AdminPage from "./pages/AdminPage";
+import SessionManagement from "./components/SessionManagement";
+import VerifiedExpertsTable from "./components/VerifiedExpertsTable";
+import UsersTable from "./components/UsersTable";
+
+
 const queryClient = new QueryClient();
 
 function LandingOrRedirect() {
   const { user } = useAuth();
   if (user?.userType === "expert") return <Navigate to="/dashboard" replace />;
+  if (user?.userType === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
   return <Index />;
 }
 
 function AppRoutes() {
   const { user } = useAuth();
-
   return (
-    <BrowserRouter>
+    <>
       {/* ScrollToTop must be inside BrowserRouter but outside Routes */}
       <ScrollToTop />
       <Routes>
@@ -43,17 +59,22 @@ function AppRoutes() {
         <Route path="/signin" element={<Login />} />
         <Route path="/signup" element={<Register />} />
 
-        <Route path="/book-session/:coachName" element={<ProtectedRoute><BookSessionPage /></ProtectedRoute>} />
+        <Route path="/book-session" element={<ProtectedRoute><BookSessionPage /></ProtectedRoute>} />
         <Route path="/payment" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
         <Route path="/my-sessions" element={<ProtectedRoute><MySessions /></ProtectedRoute>} />
         <Route path="/live-meeting" element={<ProtectedRoute><LiveMeeting /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
 
+        {/* ---------------- EXPERT DASHBOARD ---------------- */}
         <Route
           path="/dashboard/*"
           element={
             <ProtectedRoute>
-              {user?.userType === "expert" ? <ExpertLayout /> : <Navigate to="/" replace />}
+              {user?.userType === "expert" ? (
+                <ExpertLayout />
+              ) : (
+                <Navigate to="/" replace />
+              )}
             </ProtectedRoute>
           }
         >
@@ -64,17 +85,42 @@ function AppRoutes() {
           <Route path="skills" element={<SkillsPage />} />
         </Route>
 
+        {/* ---------------- ADMIN DASHBOARD ---------------- */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute>
+              {user?.userType === "admin" ? (
+                <AdminPage />
+              ) : (
+                <Navigate to="/" replace />
+              )}
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboardIndex />} />
+          <Route path="sessions" element={<SessionManagement />} />
+          <Route path="experts/pending" element={<PendingExpertsTable />} />
+          <Route path="experts/verified" element={<VerifiedExpertsTable />} />
+          <Route path="experts/rejected" element={<RejectedExpertsTable />} />
+          <Route path="users" element={<UsersTable />} />
+          <Route path="categories" element={<CategoriesPanel />} />
+          <Route path="reports" element={<ReportsPanel />} />
+        </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <AppRoutes />
-    </QueryClientProvider>
+    <>
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <AppRoutes />
+      </QueryClientProvider>
+    </>
   );
 }

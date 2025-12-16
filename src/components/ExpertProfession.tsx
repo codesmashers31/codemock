@@ -5,8 +5,7 @@ import { useAuth } from "../context/AuthContext";
 
 const ExpertProfession = () => {
   const { user } = useAuth();
-  //console.log(user._id);
-  const user_id = user._id// Replace with dynamic userId
+
 
   const initialProfile = {
     professional: {
@@ -18,20 +17,18 @@ const ExpertProfession = () => {
     }
   };
 
-  const [profile, setProfile] = useState(initialProfile);
+  const [profile, setProfile] = useState<{ professional: { title: string; company: string; totalExperience: string; industry: string; previous: any[] } }>(initialProfile);
   const [loading, setLoading] = useState(true);
 
   // ---------------- Fetch professional info ----------------
   useEffect(() => {
     const fetchProfessional = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/expert/profession", {
-          headers: { userid: user_id }
-        });
+        const res = await axios.get("/api/expert/profession");
         if (res.data.success) {
           setProfile({ professional: res.data.data });
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to fetch professional info:", err);
       } finally {
         setLoading(false);
@@ -42,7 +39,7 @@ const ExpertProfession = () => {
   }, [user]);
 
   // ---------------- Local state handlers ----------------
-  const setProfessionalField = (field, value) =>
+  const setProfessionalField = (field: string, value: string) =>
     setProfile((p) => ({ ...p, professional: { ...p.professional, [field]: value } }));
 
   const addExperience = () =>
@@ -54,7 +51,7 @@ const ExpertProfession = () => {
       }
     }));
 
-  const updateExperience = (idx, field, value) => {
+  const updateExperience = (idx: number, field: string, value: string) => {
     setProfile((p) => {
       const prev = [...p.professional.previous];
       prev[idx] = { ...prev[idx], [field]: value };
@@ -62,7 +59,7 @@ const ExpertProfession = () => {
     });
   };
 
-  const removeExperience = async (idx) => {
+  const removeExperience = async (idx: number) => {
     try {
       // Update local state
       const newPrevious = profile.professional.previous.filter((_, i) => i !== idx);
@@ -73,14 +70,13 @@ const ExpertProfession = () => {
 
       // Call backend to delete by index
       const res = await axios.delete(
-        `http://localhost:3000/api/expert/profession/previous/${idx}`,
-        { headers: { userid: user } }
+        `/api/expert/profession/previous/${idx}`
       );
 
       if (!res.data.success) {
         alert("Failed to remove experience in DB");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error removing experience:", err);
       alert("Server error");
     }
@@ -90,9 +86,8 @@ const ExpertProfession = () => {
   const saveProfessional = async () => {
     try {
       const res = await axios.put(
-        "http://localhost:3000/api/expert/profession",
-        { professionalDetails: profile.professional },
-        { headers: { userid: user } }
+        "/api/expert/profession",
+        { professionalDetails: profile.professional }
       );
 
       if (res.data.success) {
@@ -100,7 +95,7 @@ const ExpertProfession = () => {
       } else {
         alert("Failed to save professional info");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       alert("Server error");
     }
@@ -150,7 +145,7 @@ const ExpertProfession = () => {
 
       {profile.professional.previous.length > 0 && (
         <div className="mt-6 space-y-4">
-          {profile.professional.previous.map((exp, i) => (
+          {profile.professional.previous.map((exp: any, i: number) => (
             <div key={i} className="border border-gray-200 rounded-lg p-10 relative bg-gray-50">
               <IconButton onClick={() => removeExperience(i)} className="absolute top-2 right-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

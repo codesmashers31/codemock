@@ -7,10 +7,11 @@ const sessionSchema = new mongoose.Schema({
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   topics: [{ type: String }],
-  status: { 
-    type: String, 
-    enum: ['pending', 'confirmed', 'completed', 'cancelled', 'Upcoming'], 
-    default: 'confirmed' 
+  price: { type: Number, default: 0 },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'completed', 'cancelled', 'Upcoming'],
+    default: 'confirmed'
   },
   createdAt: { type: Date, default: Date.now }
 });

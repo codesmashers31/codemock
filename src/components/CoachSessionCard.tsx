@@ -47,6 +47,12 @@ interface Profile {
   isFeatured?: boolean;
   availableTime?: string;
   company?: string;
+  availability?: {
+    sessionDuration: number;
+    maxPerDay: number;
+    weekly: Record<string, any[]>;
+    breakDates: any[];
+  };
 }
 
 const getCategoryIcon = (category: Category) => {
@@ -68,8 +74,11 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   const navigate = useNavigate();
 
   const handleBookNow = () => {
-    navigate(`/book-session/${profile.name}`, {
-      state: { profile }
+    navigate(`/book-session`, {
+      state: {
+        profile: profile,
+        expertId: profile.id
+      }
     });
   };
 
@@ -474,7 +483,7 @@ const calculatePrice = (experience: string, category: string) => {
 };
 
 // Main Component
-export default function MockInterviewPlatform() {
+export default function CoachSessionCard() {
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -613,6 +622,7 @@ export default function MockInterviewPlatform() {
               category: category as Category,
               company: company,
               avatar: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
+              logo: expert.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(expert.personalInformation?.userName || "Expert") + "&background=random",
               location: location,
               mode: mode,
               reviews: reviews,
@@ -621,7 +631,8 @@ export default function MockInterviewPlatform() {
               isVerified: expert.status === "Active",
               isFeatured: Math.random() > 0.75, // 25% chance of being featured
               availableTime: availableTime,
-              languages: languages
+              languages: languages,
+              availability: expert.availability // Passing raw availability data
             };
           });
 

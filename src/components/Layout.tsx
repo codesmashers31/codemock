@@ -4,7 +4,7 @@ import { Outlet } from "react-router-dom";
 import SideNav from "./SideNav";
 import TopNav from "./TopNav";
 
-export default function ExpertLayout({ active = "dashboard" }: { active?: string }) {
+export default function ExpertLayout({ active = "dashboard", children }: { active?: string; children?: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ export default function ExpertLayout({ active = "dashboard" }: { active?: string
           <TopNav onOpenSidebar={() => setSidebarOpen(true)} />
           <main className="p-6">
             {/* Nested routes render here */}
-            <Outlet />
+            {children || <Outlet />}
           </main>
         </div>
       </div>

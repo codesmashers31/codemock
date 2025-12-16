@@ -1,13 +1,8 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Card } from '../pages/ExpertDashboard'
 
-// Dummy PrimaryButton component, replace or import accordingly
-const PrimaryButton = ({ children, onClick, className }) => (
-  <button onClick={onClick} className={`bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors ${className}`}>
-    {children}
-  </button>
-)
+import { useNavigate } from 'react-router-dom'
+import { Card, PrimaryButton } from '../pages/ExpertDashboard'
+
+
 
 // Example profile object with sessionsToday data
 const profile = {
@@ -30,7 +25,7 @@ const profile = {
 const ExpertTodaySessions = () => {
   const navigate = useNavigate();
 
-  const handleHostMeeting = async (s) => {
+  const handleHostMeeting = async (s: any) => {
     try {
       const response = await fetch('http://localhost:3000/meeting/create', {
         method: 'POST',

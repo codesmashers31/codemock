@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ReactNode, KeyboardEvent } from "react";
 import ExpertStats from "../components/ExpertStats";
 import PersonalInfo from "../components/PersonalInfo";
 import ExpertEducation from "../components/ExpertEducation";
@@ -11,7 +11,7 @@ import ExpertProfileHeader from "../components/ExpertProfileHeader";
 import Layout from "../components/Layout";
 
 /* ----------------- Professional UI Primitives ----------------- */
-export function Card({ children, className = "" }) {
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div className={`bg-white rounded-lg border border-gray-200 p-6 shadow-md hover:shadow-lg transition-shadow duration-200 ${className}`}>
       {children}
@@ -19,7 +19,7 @@ export function Card({ children, className = "" }) {
   );
 }
 
-export function PrimaryButton({ children, onClick, className = "" }) {
+export function PrimaryButton({ children, onClick, className = "" }: { children: ReactNode; onClick?: () => void; className?: string }) {
   return (
     <button
       onClick={onClick}
@@ -31,19 +31,20 @@ export function PrimaryButton({ children, onClick, className = "" }) {
   );
 }
 
-export function SecondaryButton({ children, onClick, className = "" }) {
+export function SecondaryButton({ children, onClick, className = "", disabled = false }: { children: ReactNode; onClick?: () => void; className?: string; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className={`bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 px-3 py-2 rounded-md font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${className}`}
+      className={`bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 px-3 py-2 rounded-md font-medium text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 ${className} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       type="button"
+      disabled={disabled}
     >
       {children}
     </button>
   );
 }
 
-export function IconButton({ children, onClick, className = "" }) {
+export function IconButton({ children, onClick, className = "" }: { children: ReactNode; onClick?: () => void; className?: string }) {
   return (
     <button
       onClick={onClick}
@@ -55,7 +56,7 @@ export function IconButton({ children, onClick, className = "" }) {
   );
 }
 
-export function Input({ label, type = "text", value = "", onChange, placeholder = "", className = "" }) {
+export function Input({ label, type = "text", value = "", onChange, placeholder = "", className = "" }: { label?: string; type?: string; value?: string | number; onChange?: (val: string) => void; placeholder?: string; className?: string }) {
   return (
     <div>
       {label && <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>}
@@ -70,7 +71,7 @@ export function Input({ label, type = "text", value = "", onChange, placeholder 
   );
 }
 
-export function Select({ label, value, onChange, options = [] }) {
+export function Select({ label, value, onChange, options = [] }: { label?: string; value?: string | number; onChange?: (val: string) => void; options?: { value: string | number; label: string }[] }) {
   return (
     <div>
       {label && <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>}
@@ -97,6 +98,13 @@ export function MultiSelect({
   options = [],
   placeholder = "Type to search...",
   className = ""
+}: {
+  label?: string;
+  value?: string[];
+  onChange?: (val: string[]) => void;
+  options?: { value: string; label: string }[];
+  placeholder?: string;
+  className?: string;
 }) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -106,19 +114,19 @@ export function MultiSelect({
     !value.includes(opt.value)
   );
 
-  const addItem = (itemValue) => {
+  const addItem = (itemValue: string) => {
     if (!value.includes(itemValue)) {
-      onChange([...value, itemValue]);
+      onChange?.([...value, itemValue]);
     }
     setSearch("");
     setIsOpen(false);
   };
 
-  const removeItem = (itemValue) => {
-    onChange(value.filter(v => v !== itemValue));
+  const removeItem = (itemValue: string) => {
+    onChange?.(value.filter(v => v !== itemValue));
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && search.trim() && filteredOptions.length === 0) {
       addItem(search.trim());
     }
@@ -203,7 +211,7 @@ export default function ExpertDashboard() {
         <ExpertStats />
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* LEFT SIDE */}
           <div className="lg:col-span-1 space-y-6">
             <ExpertProfileHeader />

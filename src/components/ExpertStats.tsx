@@ -1,4 +1,4 @@
-import React from 'react'
+
 
 const ExpertStats = () => {
   const statsMock = {
@@ -9,10 +9,19 @@ const ExpertStats = () => {
   };
 
   // Professional Stats Card
-  function StatCard({ title, value, sub, icon, trend, color = 'blue' }) {
+  interface StatCardProps {
+    title: string;
+    value: string | number;
+    sub?: string;
+    icon: React.ReactNode;
+    trend?: number;
+    color?: 'blue' | 'green' | 'purple' | 'orange';
+  }
+
+  function StatCard({ title, value, sub, icon, trend, color = 'blue' }: StatCardProps) {
     const colorClasses = {
       blue: 'border-blue-200 bg-blue-50',
-      green: 'border-green-200 bg-green-50', 
+      green: 'border-green-200 bg-green-50',
       purple: 'border-purple-200 bg-purple-50',
       orange: 'border-orange-200 bg-orange-50',
     };
@@ -31,16 +40,15 @@ const ExpertStats = () => {
             {icon}
           </div>
           {trend && (
-            <span className={`text-xs font-medium px-2 py-1 rounded ${
-              trend > 0 
-                ? 'text-green-700 bg-green-100' 
-                : 'text-red-700 bg-red-100'
-            }`}>
+            <span className={`text-xs font-medium px-2 py-1 rounded ${trend > 0
+              ? 'text-green-700 bg-green-100'
+              : 'text-red-700 bg-red-100'
+              }`}>
               {trend > 0 ? '↗' : '↘'} {Math.abs(trend)}%
             </span>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <p className="text-gray-600 text-sm font-medium">{title}</p>
           <div className="flex items-end justify-between">
@@ -86,32 +94,32 @@ const ExpertStats = () => {
 
       {/* Professional Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Total Sessions" 
-          value={statsMock.totalSessions} 
+        <StatCard
+          title="Total Sessions"
+          value={statsMock.totalSessions}
           sub="All time"
           icon={icons.sessions}
           trend={12.5}
           color="blue"
         />
-        <StatCard 
-          title="Upcoming Sessions" 
-          value={statsMock.upcomingSessions} 
+        <StatCard
+          title="Upcoming Sessions"
+          value={statsMock.upcomingSessions}
           sub="Next 7 days"
           icon={icons.upcoming}
           trend={25}
           color="green"
         />
-        <StatCard 
-          title="Today's Bookings" 
-          value={statsMock.todaysBookings} 
+        <StatCard
+          title="Today's Bookings"
+          value={statsMock.todaysBookings}
           sub="Scheduled today"
           icon={icons.today}
           color="purple"
         />
-        <StatCard 
-          title="Expert Rating" 
-          value={statsMock.rating} 
+        <StatCard
+          title="Expert Rating"
+          value={statsMock.rating}
           sub="Out of 5.0"
           icon={icons.rating}
           trend={2.1}

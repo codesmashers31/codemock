@@ -1,17 +1,33 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, IconButton, PrimaryButton, SecondaryButton } from '../pages/ExpertDashboard';
-import { useAuth } from "../context/AuthContext";
+
+
+interface Slot {
+  from: string;
+  to: string;
+}
+
+interface Availability {
+  sessionDuration: number;
+  maxPerDay: number;
+  weekly: Record<string, Slot[]>;
+  breakDates: { start: string; end: string }[];
+}
+
+interface ProfileState {
+  availability: Availability;
+}
 
 const ExpertAvailability = () => {
 
-  const { user } = useAuth();
+
 
   //console.log(user);
 
-  const user_id = user._id;
+  /* user_id removed */
 
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<ProfileState>({
     availability: {
       sessionDuration: 30,
       maxPerDay: 1,
@@ -22,15 +38,13 @@ const ExpertAvailability = () => {
 
 
   const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-  const dayLabel = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
+  const dayLabel: Record<string, string> = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
 
   /* ----------------- Fetch Availability (GET) ----------------- */
   useEffect(() => {
     async function fetchAvailability() {
       try {
-        const res = await axios.get("http://localhost:3000/api/expert/availability", {
-          headers: { userid: user_id }
-        });
+        const res = await axios.get("/api/expert/availability");
 
         const data = res.data.data;
 
@@ -52,7 +66,7 @@ const ExpertAvailability = () => {
   }, []);
 
   /* ----------------- Calculate End Time ----------------- */
-  function calculateEndTime(startTime, duration) {
+  function calculateEndTime(startTime: string, duration: number) {
     if (!startTime) return "";
 
     const [hours, minutes] = startTime.split(':').map(Number);
@@ -69,7 +83,7 @@ const ExpertAvailability = () => {
 
   /* ----------------- Weekly Slot Management ----------------- */
 
-  const addSlotForDay = (day) => {
+  const addSlotForDay = (day: string) => {
     setProfile((p) => {
       const weekly = { ...p.availability.weekly };
       weekly[day] = [...(weekly[day] || []), { from: "", to: "" }];
@@ -77,7 +91,7 @@ const ExpertAvailability = () => {
     });
   };
 
-  const updateSlotForDay = (day, idx, field, value) => {
+  const updateSlotForDay = (day: string, idx: number, field: string, value: string) => {
     setProfile((p) => {
       const weekly = { ...p.availability.weekly };
       const slots = [...(weekly[day] || [])];
@@ -95,13 +109,12 @@ const ExpertAvailability = () => {
     });
   };
 
-  const removeSlotForDay = async (day, idx) => {
+  const removeSlotForDay = async (day: string, idx: number) => {
     try {
       const slot = profile.availability.weekly[day][idx];
 
       // Call backend DELETE endpoint
-      await axios.delete("http://localhost:3000/api/expert/availability/delslot", {
-        headers: { userid: user },
+      await axios.delete("/api/expert/availability/delslot", {
         data: { day, from: slot.from } // identify slot by day + start time
       });
 
@@ -120,7 +133,7 @@ const ExpertAvailability = () => {
 
   /* ----------------- Break Dates ----------------- */
 
-  const addBreakDate = (dateStr) => {
+  const addBreakDate = (dateStr: string) => {
     if (!dateStr) return;
     setProfile((p) => ({
       ...p,
@@ -131,13 +144,12 @@ const ExpertAvailability = () => {
     }));
   };
 
-  const removeBreakDate = async (idx) => {
+  const removeBreakDate = async (idx: number) => {
     try {
       const breakDate = profile.availability.breakDates[idx];
 
       // Call backend DELETE endpoint
-      await axios.delete("http://localhost:3000/api/expert/availability/delbreak", {
-        headers: { userid: user },
+      await axios.delete("/api/expert/availability/delbreak", {
         data: { start: breakDate.start } // send the start date
       });
 
@@ -162,15 +174,12 @@ const ExpertAvailability = () => {
     try {
       const payload = profile.availability;
 
-      const res = await axios.put(
-        "http://localhost:3000/api/expert/availability",
-        payload,
-        {
-          headers: { userid: user }
-        }
+      await axios.put(
+        "/api/expert/availability",
+        payload
       );
 
-      alert("Availability saved successfully!", res);
+      alert("Availability saved successfully!");
     } catch (err) {
       console.error("Error saving:", err);
       alert("Failed to save availability");
@@ -284,7 +293,7 @@ const ExpertAvailability = () => {
             <div className="flex items-center gap-4 mb-4">
               <input id="breakDateInput" type="date" className="border border-gray-300 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
               <SecondaryButton onClick={() => {
-                const el = document.getElementById("breakDateInput");
+                const el = document.getElementById("breakDateInput") as HTMLInputElement;
                 if (el?.value) addBreakDate(el.value);
               }}>
                 Add Break Date

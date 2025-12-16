@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
+import { useAuth } from '../context/AuthContext';
+import { Shield } from 'lucide-react';
 
 const ExpertVerification = () => {
-  const [profile, setProfile] = useState({
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<{ verification: { companyIdFile: File | null; aadharFile: File | null; linkedin: string } }>({
     verification: {
       companyIdFile: null,
       aadharFile: null,
@@ -12,18 +15,18 @@ const ExpertVerification = () => {
   });
 
   // State to store fetched verification details (including name and url)
-  const [fetchedVerification, setFetchedVerification] = useState(null);
+  const [fetchedVerification, setFetchedVerification] = useState<any>(null);
+
+  // State to store verification status
+  const [verificationStatus, setVerificationStatus] = useState<string>('pending');
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user]);
 
   const fetchProfile = async () => {
     try {
-      const userId = 'YOUR_USER_ID';
-      const response = await axios.get('http://localhost:3000/api/expert/profile', {
-        headers: { userid: userId },
-      });
+      const response = await axios.get('/api/expert/profile');
       if (response.data.success && response.data.profile.verification) {
         setFetchedVerification(response.data.profile.verification);
         setProfile((p) => ({
@@ -34,18 +37,22 @@ const ExpertVerification = () => {
           },
         }));
       }
-    } catch (error) {
+      // Fetch verification status
+      if (response.data.success && response.data.profile.status) {
+        setVerificationStatus(response.data.profile.status);
+      }
+    } catch (error: any) {
       console.error("Error fetching profile", error);
     }
   };
 
-  const companyIdRef = useRef(null);
-  const aadharRef = useRef(null);
+  const companyIdRef = useRef<HTMLInputElement>(null);
+  const aadharRef = useRef<HTMLInputElement>(null);
 
-  const handleCompanyIdFile = (file) =>
+  const handleCompanyIdFile = (file: File) =>
     setProfile((p) => ({ ...p, verification: { ...p.verification, companyIdFile: file } }));
 
-  const handleAadharFile = (file) =>
+  const handleAadharFile = (file: File) =>
     setProfile((p) => ({ ...p, verification: { ...p.verification, aadharFile: file } }));
 
   const saveVerification = async () => {
@@ -60,26 +67,38 @@ const ExpertVerification = () => {
       formData.append('linkedin', profile.verification.linkedin);
 
       // Add userid header as needed, replace userId with actual user ID
-      const userId = 'YOUR_USER_ID';
-
-      const response = await axios.put('http://localhost:3000/api/expert/verification', formData, {
+      const response = await axios.put('/api/expert/verification', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          userid: userId,
         },
       });
 
       alert('Verification saved successfully!');
       console.log('Server response:', response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving verification:', error);
       alert('Failed to save verification.');
     }
   };
 
+  const isVerified = verificationStatus === 'Active' || verificationStatus === 'approved';
+
   return (
     <>
       <Card>
+        {/* Verified Badge */}
+        {isVerified && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+            <div className="bg-green-600 rounded-full p-1.5">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-green-800">Verified Expert</p>
+              <p className="text-xs text-green-600">Your profile has been verified by our team</p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-blue-800">Verification</h3>
           <p className="text-sm text-gray-500 mt-1">Company ID, Aadhar and LinkedIn</p>
@@ -92,7 +111,7 @@ const ExpertVerification = () => {
               ref={companyIdRef}
               type="file"
               accept=".pdf,.jpg,.png"
-              onChange={(e) => handleCompanyIdFile(e.target.files?.[0])}
+              onChange={(e) => e.target.files && handleCompanyIdFile(e.target.files[0])}
               className="text-sm text-gray-600 w-full border border-gray-300 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             {profile.verification.companyIdFile && (
@@ -114,7 +133,7 @@ const ExpertVerification = () => {
               ref={aadharRef}
               type="file"
               accept=".pdf,.jpg,.png"
-              onChange={(e) => handleAadharFile(e.target.files?.[0])}
+              onChange={(e) => e.target.files && handleAadharFile(e.target.files[0])}
               className="text-sm text-gray-600 w-full border border-gray-300 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             {profile.verification.aadharFile && (
