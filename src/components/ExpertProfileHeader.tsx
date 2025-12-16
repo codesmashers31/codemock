@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, ReactNode } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Card, SecondaryButton } from "../pages/ExpertDashboard";
+import { Shield } from "lucide-react";
 
 function ProgressRing({ size = 110, stroke = 8, percent = 0, children }: { size?: number; stroke?: number; percent?: number; children: ReactNode }) {
   const radius = (size - stroke) / 2;
@@ -159,27 +160,39 @@ const ExpertProfileHeader = () => {
   return (
     <Card className="text-center relative">
       <div className="absolute top-4 right-4">
-        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${profile.status === "approved" ? "bg-green-100 text-green-700" :
-          profile.status === "rejected" ? "bg-red-100 text-red-700" :
-            "bg-yellow-100 text-yellow-700"
+        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${profile.status === "Active" || profile.status === "approved"
+          ? "bg-green-100 text-green-700"
+          : profile.status === "rejected"
+            ? "bg-red-100 text-red-700"
+            : "bg-yellow-100 text-yellow-700"
           }`}>
-          {profile.status === "approved" ? "Approved" :
-            profile.status === "rejected" ? "Rejected" : "Pending Verification"}
+          {profile.status === "Active" ? "Verified" :
+            profile.status === "approved" ? "Approved" :
+              profile.status === "rejected" ? "Rejected" : "Pending Verification"}
         </span>
       </div>
       <div className="flex flex-col items-center">
         {/* <p>{profile.photoUrl}</p> */}
-        <ProgressRing percent={completion} size={120} stroke={8}>
+        <div className="relative">
+          <ProgressRing percent={completion} size={120} stroke={8}>
 
 
-          {profile.photoUrl ? (
-            <img src={profile.photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
-          ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-full">
-              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+            {profile.photoUrl ? (
+              <img src={profile.photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
+            ) : (
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 rounded-full">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+              </div>
+            )}
+          </ProgressRing>
+
+          {/* Verified Badge */}
+          {(profile.status === "Active" || profile.status === "approved") && (
+            <div className="absolute bottom-0 right-0 bg-green-600 rounded-full p-2 shadow-lg border-2 border-white">
+              <Shield className="w-5 h-5 text-white" />
             </div>
           )}
-        </ProgressRing>
+        </div>
 
         <div className="mt-4 text-xl font-semibold text-gray-900">
           {profile.name || fallbackName || "Your Name"}

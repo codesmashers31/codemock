@@ -3,7 +3,7 @@ import { Briefcase, MapPin, Clock, Users, Star, BookOpen, ChevronRight, Eye, Boo
 
 const CoachSessionCard = () => {
   const [activeFilter, setActiveFilter] = useState('all');
-  
+
   const profiles = [
     {
       id: 1,
@@ -115,7 +115,7 @@ const CoachSessionCard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -127,7 +127,7 @@ const CoachSessionCard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -139,7 +139,7 @@ const CoachSessionCard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -164,11 +164,10 @@ const CoachSessionCard = () => {
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                      activeFilter === filter.id
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${activeFilter === filter.id
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {filter.label}
                     <span className="ml-2 text-xs opacity-80">({filter.count})</span>
@@ -209,7 +208,7 @@ const CoachSessionCard = () => {
                             </div>
                             <div className="absolute -bottom-1 -right-1 bg-green-500 border-2 border-white w-4 h-4 rounded-full"></div>
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-3 mb-2">
                               <h3 className="text-xl font-bold text-gray-900 truncate">{profile.name}</h3>
@@ -219,7 +218,7 @@ const CoachSessionCard = () => {
                                 <span className="text-sm text-gray-600">({profile.reviews})</span>
                               </div>
                             </div>
-                            
+
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
                               <span className="font-medium text-gray-900">{profile.role}</span>
                               <span className="flex items-center gap-1">
@@ -264,7 +263,7 @@ const CoachSessionCard = () => {
                             <div className="text-2xl font-bold text-gray-900">{profile.price}</div>
                             <div className="text-sm text-gray-500">per session</div>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                             <div className="text-center p-2 bg-gray-50 rounded-lg">
                               <Clock className="w-3 h-3 mx-auto mb-1" />
@@ -289,7 +288,7 @@ const CoachSessionCard = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Footer Stats */}
                   <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
                     <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-gray-600">

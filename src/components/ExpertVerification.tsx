@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
 import { useAuth } from '../context/AuthContext';
+import { Shield } from 'lucide-react';
 
 const ExpertVerification = () => {
   const { user } = useAuth();
@@ -15,6 +16,9 @@ const ExpertVerification = () => {
 
   // State to store fetched verification details (including name and url)
   const [fetchedVerification, setFetchedVerification] = useState<any>(null);
+
+  // State to store verification status
+  const [verificationStatus, setVerificationStatus] = useState<string>('pending');
 
   useEffect(() => {
     fetchProfile();
@@ -32,6 +36,10 @@ const ExpertVerification = () => {
             linkedin: response.data.profile.verification.linkedin || '',
           },
         }));
+      }
+      // Fetch verification status
+      if (response.data.success && response.data.profile.status) {
+        setVerificationStatus(response.data.profile.status);
       }
     } catch (error: any) {
       console.error("Error fetching profile", error);
@@ -73,9 +81,24 @@ const ExpertVerification = () => {
     }
   };
 
+  const isVerified = verificationStatus === 'Active' || verificationStatus === 'approved';
+
   return (
     <>
       <Card>
+        {/* Verified Badge */}
+        {isVerified && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+            <div className="bg-green-600 rounded-full p-1.5">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-green-800">Verified Expert</p>
+              <p className="text-xs text-green-600">Your profile has been verified by our team</p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-blue-800">Verification</h3>
           <p className="text-sm text-gray-500 mt-1">Company ID, Aadhar and LinkedIn</p>
