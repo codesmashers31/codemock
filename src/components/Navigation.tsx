@@ -208,7 +208,7 @@ const Navigation = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      console.log("Searching for:", searchQuery);
+
       // Handle search logic here
     }
   };

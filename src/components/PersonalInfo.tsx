@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 const PersonalInfo = () => {
 
     const { user } = useAuth();
-    //console.log(user._id);
+
 
 
     const CATEGORY_OPTIONS = [
@@ -45,7 +45,7 @@ const PersonalInfo = () => {
 
                 if (response.data.success && response.data.data) {
                     const data = response.data.data;
-                    console.log(response.data.data);
+
 
                     setProfile({
                         personal: {
@@ -84,8 +84,8 @@ const PersonalInfo = () => {
                 category: profile.personal.category
             };
 
-            console.log("📤 Sending personal info with category:", payload.category);
-            console.log("Full payload:", payload);
+
+
 
             const response = await axios.put(
                 `/api/expert/personalinfo`,
@@ -99,7 +99,7 @@ const PersonalInfo = () => {
 
             const data = response.data;
             if (data.success) {
-                console.log("✅ Server response:", data);
+
                 alert("Personal info updated successfully!");
             } else {
                 alert("Failed to update personal info");

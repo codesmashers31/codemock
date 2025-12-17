@@ -56,7 +56,7 @@ const ExpertProfileHeader = () => {
 
 
   const { user } = useAuth();
-  //console.log(user._id);
+
 
 
   /* token removed */
@@ -84,7 +84,7 @@ const ExpertProfileHeader = () => {
     try {
       const res = await axios.get("/api/expert/profile");
 
-      //console.log("GET http://localhost:3000/api/expert/profile =>", res?.data);
+
 
       if (res.data?.success) {
         const p = res.data.profile || {};
@@ -132,7 +132,7 @@ const ExpertProfileHeader = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      //console.log("POST http://localhost:3000/api/expert/profile/photo =>", res?.data);
+
 
       if (res.data?.success) {
         const p = res.data.profile || {};

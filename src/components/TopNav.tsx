@@ -16,7 +16,7 @@ interface Notification {
 export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const { user, logout } = useAuth();
 
-  //console.log(user);
+
 
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -116,7 +116,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
       try {
         const res = await axios.get("http://localhost:3000/api/expert/profile");
 
-        console.log(res.data.profile.photoUrl);
+
 
 
         if (res.data?.success) {
@@ -322,22 +322,22 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
                 )}
               </div>
 
-                {user?.userType === "expert" &&
-                  <div className="py-1">
-                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                      Profile Settings
-                    </Link>
-                    <Link to="/sessions" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                      My Sessions
-                    </Link>
-                    <Link to="/availability" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                      Availability
-                    </Link>
-                    <Link to="/payments" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                      Payments & Earnings
-                    </Link>
-                  </div>
-                }
+              {user?.userType === "expert" &&
+                <div className="py-1">
+                  <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                    Profile Settings
+                  </Link>
+                  <Link to="/sessions" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                    My Sessions
+                  </Link>
+                  <Link to="/availability" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                    Availability
+                  </Link>
+                  <Link to="/payments" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                    Payments & Earnings
+                  </Link>
+                </div>
+              }
 
               <div className="py-1 border-t border-gray-200">
                 <button onClick={handleSignOut} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" role="menuitem">

@@ -71,14 +71,14 @@ export const verifyOtp = async (req, res) => {
 
   try {
     const record = await Otp.findOne({ email });
-    
+
     if (!record) return res.status(400).json({ message: "OTP not found" });
     if (Date.now() > record.expires) return res.status(400).json({ message: "OTP expired" });
     if (parseInt(otp) !== record.otp) return res.status(400).json({ message: "Invalid OTP" });
 
     // Delete the OTP after successful verification
     await Otp.deleteOne({ email });
-    
+
     res.json({ message: "OTP verified successfully" });
   } catch (error) {
     console.error("Error verifying OTP:", error);
@@ -103,7 +103,7 @@ export const registerUser = async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     // Create new user
     const newUser = new User({
       email: email.toLowerCase(),
@@ -144,18 +144,18 @@ export const loginUser = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
-        email: user.email, 
-        userType: user.userType, 
+      {
+        email: user.email,
+        userType: user.userType,
         name: user.name,
-        userId: user._id 
+        userId: user._id
       },
       JWT_SECRET,
       { expiresIn: "24h" }
     );
 
-    res.json({ 
-      message: "Login successful", 
+    res.json({
+      message: "Login successful",
       token,
       user: {
         email: user.email,

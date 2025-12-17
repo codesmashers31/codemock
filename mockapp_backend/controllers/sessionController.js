@@ -79,15 +79,9 @@ export const getSessionsByCandidate = async (req, res) => {
                     expert = await Expert.findById(session.expertId);
                 }
 
-                console.log('Session expertId:', session.expertId);
-                console.log('Found expert:', expert ? 'YES' : 'NO');
+
                 if (expert) {
-                    console.log('Expert details:', {
-                        userId: expert.userId,
-                        name: expert.personalInformation?.userName,
-                        title: expert.professionalDetails?.title,
-                        company: expert.professionalDetails?.company
-                    });
+
                 }
 
                 return {
@@ -214,6 +208,16 @@ export const seedSession = async (req, res) => {
         const session = await sessionService.seedTestSession();
         res.json(session);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+    }
+};
+
+/* -------------------- ADMIN: Get All Sessions -------------------- */
+export const getAllSessions = async (req, res) => {
+    try {
+        const sessions = await sessionService.getAllSessions();
+        res.json({ success: true, data: sessions });
+    } catch (error) {
+        console.error("Get All Sessions Error:", error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };

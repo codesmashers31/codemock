@@ -59,8 +59,8 @@ export function useSignaling({
         const socket = socketRef.current;
 
         socket.on('connect', () => {
-            console.log('Connected to signaling server:', socket.id);
-            console.log(`Joining Room: ${meetingId} as ${role} (User: ${userId})`);
+
+
             socket.emit('join-room', { meetingId, role, userId });
         });
 

@@ -1,337 +1,480 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { Toaster, toast } from "sonner";
 
-const RejectedExpertsTable = () => {
-  const [selectedExpert, setSelectedExpert] = useState(null);
+interface PersonalInformation {
+  userName: string;
+  mobile: string;
+  gender: string;
+  dob: string;
+  country: string;
+  state: string;
+  city: string;
+  category?: string;
+}
 
-  const rejectedExperts = [
-    {
-      _id: "3",
-      personalInformation: {
-        userName: "Rahul Mehta",
-        mobile: "9876543212",
-        gender: "Male",
-        dob: "1989-07-15",
-        country: "India",
-        state: "Delhi",
-        city: "Delhi",
-      },
-      education: [
-        { degree: "BBA", institution: "Delhi University", field: "Finance", start: 2007, end: 2010 },
-      ],
-      professionalDetails: {
-        title: "Valuation Expert",
-        company: "ValuCorp",
-        totalExperience: 7,
-        industry: "Finance",
-      },
-      skillsAndExpertise: {
-        mode: "Online",
-        domains: ["Valuation", "Financial Analysis"],
-        tools: ["Excel", "Tally"],
-        languages: ["English", "Hindi"],
-      },
-      verification: {
-        aadharFile: "",
-        companyIdFile: "",
-        linkedin: "https://linkedin.com/in/rahulmehta",
-      },
-      reason: "Insufficient documents",
-    },
-  ];
+interface Education {
+  degree: string;
+  institution: string;
+  field: string;
+  start: number;
+  end: number;
+}
+
+interface ProfessionalDetails {
+  title: string;
+  company: string;
+  totalExperience: number;
+  industry: string;
+}
+
+interface SkillsAndExpertise {
+  mode: string;
+  domains: string[];
+  tools: string[];
+  languages: string[];
+}
+
+interface Verification {
+  aadharFile: string;
+  companyIdFile: string;
+  linkedin: string;
+}
+
+interface Expert {
+  _id: string;
+  personalInformation: PersonalInformation;
+  education: Education[];
+  professionalDetails: ProfessionalDetails;
+  skillsAndExpertise: SkillsAndExpertise;
+  verification: Verification;
+  userDetails?: {
+    email: string;
+    _id: string;
+  };
+  rejectionReason?: string;
+}
+
+const RejectedExpertsTable: React.FC = () => {
+  const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [rejectedExperts, setRejectedExperts] = useState<Expert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Reject Modal State
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    const fetchRejectedExperts = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/expert/rejected");
+        if (response.data.success) {
+          setRejectedExperts(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching rejected experts:", error);
+        toast.error("Failed to load rejected experts");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRejectedExperts();
+  }, []);
+
+  // Effect to reset pagination when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handleApprove = async () => {
+    if (!selectedExpert) return;
+    setIsProcessing(true);
+    try {
+      const response = await axios.put(`http://localhost:3000/api/expert/approve/${selectedExpert._id}`);
+      if (response.data.success) {
+        toast.success("Expert approved and moved to Verified list!");
+        setRejectedExperts(prev => prev.filter(exp => exp._id !== selectedExpert._id));
+        setSelectedExpert(null);
+      }
+    } catch (error) {
+      console.error("Error approving expert:", error);
+      toast.error("Failed to approve expert");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRejectClick = () => {
+    setIsRejectModalOpen(true);
+    // Pre-fill with existing reason if desired, or keep blank for update
+    if (selectedExpert?.rejectionReason) {
+      setRejectionReason(selectedExpert.rejectionReason);
+    } else {
+      setRejectionReason("");
+    }
+  };
+
+  const submitRejectionUpdate = async () => {
+    if (!selectedExpert) return;
+    if (!rejectionReason.trim()) {
+      toast.error("Please enter a reason for rejection");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await axios.put(`http://localhost:3000/api/expert/reject/${selectedExpert._id}`, {
+        reason: rejectionReason
+      });
+
+      if (response.data.success) {
+        toast.success("Rejection reason updated.");
+        // Update local state to reflect new reason
+        setRejectedExperts(prev => prev.map(exp =>
+          exp._id === selectedExpert._id ? { ...exp, rejectionReason: rejectionReason } : exp
+        ));
+        setIsRejectModalOpen(false);
+        setSelectedExpert(null);
+        setRejectionReason("");
+      }
+    } catch (error) {
+      console.error("Error updating rejection:", error);
+      toast.error("Failed to update rejection reason");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const filteredExperts = rejectedExperts.filter(exp =>
+    exp.personalInformation.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    exp.professionalDetails.industry.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredExperts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentExperts = filteredExperts.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
-    <>
-      {/* Main Table Section */}
-      <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-800">Rejected Experts</h2>
-          <p className="text-gray-500 text-sm mt-1">Review rejected expert applications</p>
-        </div>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <Toaster position="top-right" richColors />
 
-        {/* Table Container */}
-        <div className="overflow-hidden rounded-xl border border-gray-100 shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="py-4 px-6 text-left text-sm font-medium text-gray-600 tracking-wider border-b border-gray-100">
-                    Expert
-                  </th>
-                  <th className="py-4 px-6 text-left text-sm font-medium text-gray-600 tracking-wider border-b border-gray-100">
-                    Category
-                  </th>
-                  <th className="py-4 px-6 text-left text-sm font-medium text-gray-600 tracking-wider border-b border-gray-100">
-                    Reason
-                  </th>
-                  <th className="py-4 px-6 text-left text-sm font-medium text-gray-600 tracking-wider border-b border-gray-100">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rejectedExperts.map((exp, index) => (
-                  <tr 
-                    key={exp._id} 
-                    className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100 transition-colors duration-150`}
-                  >
-                    <td className="py-4 px-6">
-                      <div className="flex items-center">
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-700">{exp.personalInformation.userName}</div>
-                          <div className="text-sm text-gray-500">{exp.professionalDetails.title}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
-                        {exp.professionalDetails.industry}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100">
-                        {exp.reason}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => setSelectedExpert(exp)}
-                          className="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-700 text-sm font-medium rounded-lg hover:bg-yellow-200 transition-all duration-200 border border-yellow-200"
-                        >
-                          Re-evaluate
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Header with Search */}
+      <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Rejected Experts</h2>
+          <p className="text-sm text-gray-500 mt-1">Review and manage rejected applications</p>
         </div>
-
-        {/* Stats Footer */}
-        <div className="mt-6 flex justify-between items-center text-sm text-gray-500">
-          <div className="flex items-center">
-            <span className="flex items-center">
-              <span className="w-2 h-2 bg-red-300 rounded-full mr-2"></span>
-              {rejectedExperts.length} rejected application{rejectedExperts.length !== 1 ? 's' : ''}
-            </span>
+        <div className="relative w-full sm:w-72">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
           </div>
-          <div>
-            Showing {rejectedExperts.length} of {rejectedExperts.length} expert{rejectedExperts.length !== 1 ? 's' : ''}
-          </div>
+          <input
+            type="text"
+            placeholder="Search experts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm"
+          />
         </div>
       </div>
 
-      {/* Modal - Fixed Version */}
+      {loading ? (
+        <div className="flex justify-center items-center py-24">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        </div>
+      ) : (
+        <>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50/50">
+                <tr>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Expert Name</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reason</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {currentExperts.length > 0 ? (
+                  currentExperts.map((exp) => (
+                    <tr key={exp._id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 px-6">
+                        <div>
+                          <p className="font-medium text-gray-900">{exp.personalInformation.userName}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{exp.professionalDetails.title}</p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                          {exp.personalInformation.category || exp.professionalDetails.industry}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-block max-w-xs truncate text-sm text-red-600" title={exp.rejectionReason}>
+                          {exp.rejectionReason || "No reason specified"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => setSelectedExpert(exp)}
+                            className="px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors border border-amber-200"
+                          >
+                            Re-evaluate
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-gray-500 text-sm">
+                      No rejected experts found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Footer */}
+          {filteredExperts.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-sm text-gray-500">
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredExperts.length)} of {filteredExperts.length}
+              </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-lg border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
+                          ? 'bg-red-600 text-white'
+                          : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-lg border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Profile Detail Modal */}
       {selectedExpert && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-30"
-              onClick={() => setSelectedExpert(null)}
-            ></div>
-            
-            {/* Modal Container - Fixed z-index */}
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full relative z-50">
-              {/* Header */}
-              <div className="bg-linear-to-r from-gray-50 to-gray-100 px-6 py-5 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {selectedExpert.personalInformation.userName}
-                    </h3>
-                    <p className="text-red-500 text-sm mt-1 font-medium">
-                      Rejection Reason: {selectedExpert.reason}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedExpert(null)}
-                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200 text-xl"
-                  >
-                    ✕
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedExpert(null)}
+          ></div>
+
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{selectedExpert.personalInformation.userName}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-gray-500">Re-evaluation</span>
+                  <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">rejected</span>
                 </div>
               </div>
+              <button
+                onClick={() => setSelectedExpert(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Content */}
-              <div className="px-6 py-5 bg-white">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Personal Information */}
-                  <div className="space-y-4">
-                    <div className="border-l-3 border-blue-300 pl-3">
-                      <h4 className="text-sm font-medium text-gray-700 uppercase tracking-wider">Personal Information</h4>
+            <div className="px-6 py-4 bg-red-50 border-b border-red-100">
+              <h4 className="text-sm font-bold text-red-800 mb-1">Current Rejection Reason:</h4>
+              <p className="text-sm text-red-700">{selectedExpert.rejectionReason || "No specific reason provided."}</p>
+            </div>
+
+            <div className="p-6 space-y-8">
+              {/* Detailed sections */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <section>
+                  <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <span className="w-8 h-0.5 bg-blue-600 rounded-full"></span>
+                    Personal Info
+                  </h4>
+                  <div className="space-y-3 pl-10">
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-sm text-gray-500">Email</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.userDetails?.email || "N/A"}</span>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Gender</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.personalInformation.gender}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Date of Birth</span>
-                        <span className="text-sm text-gray-700">{new Date(selectedExpert.personalInformation.dob).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Mobile</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.personalInformation.mobile}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm font-medium text-gray-600">Location</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.personalInformation.city}, {selectedExpert.personalInformation.state}, {selectedExpert.personalInformation.country}</span>
-                      </div>
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-sm text-gray-500">Mobile</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.personalInformation.mobile}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-sm text-gray-500">Location</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.personalInformation.city}, {selectedExpert.personalInformation.country}</span>
                     </div>
                   </div>
+                </section>
 
-                  {/* Professional Details */}
-                  <div className="space-y-4">
-                    <div className="border-l-3 border-green-300 pl-3">
-                      <h4 className="text-sm font-medium text-gray-700 uppercase tracking-wider">Professional Details</h4>
+                <section>
+                  <h4 className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <span className="w-8 h-0.5 bg-green-600 rounded-full"></span>
+                    Professional
+                  </h4>
+                  <div className="space-y-3 pl-10">
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-sm text-gray-500">Title</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.professionalDetails.title}</span>
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Title</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.professionalDetails.title}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Company</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.professionalDetails.company}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Experience</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.professionalDetails.totalExperience} years</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-sm font-medium text-gray-600">Industry</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.professionalDetails.industry}</span>
-                      </div>
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-sm text-gray-500">Company</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.professionalDetails.company}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-gray-50">
+                      <span className="text-sm text-gray-500">Experience</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.professionalDetails.totalExperience} Years</span>
                     </div>
                   </div>
+                </section>
+              </div>
 
-                  {/* Education */}
-                  <div className="space-y-4">
-                    <div className="border-l-3 border-purple-300 pl-3">
-                      <h4 className="text-sm font-medium text-gray-700 uppercase tracking-wider">Education</h4>
-                    </div>
-                    <div className="space-y-3">
-                      {selectedExpert.education.map((edu, idx) => (
-                        <div key={idx} className="bg-purple-50 rounded-lg p-3 border border-purple-100">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-gray-700">{edu.degree}</p>
-                              <p className="text-sm text-gray-500 mt-1">{edu.field} • {edu.institution}</p>
-                            </div>
-                            <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded">
-                              {edu.start}-{edu.end}
-                            </span>
-                          </div>
+              {/* Education & Skills */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <section>
+                  <h4 className="text-xs font-semibold text-purple-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <span className="w-8 h-0.5 bg-purple-600 rounded-full"></span>
+                    Education
+                  </h4>
+                  <div className="pl-10 space-y-3">
+                    {selectedExpert.education.map((edu, i) => (
+                      <div key={i} className="p-3 bg-purple-50/50 rounded-lg border border-purple-100">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-semibold text-gray-900">{edu.degree}</span>
+                          <span className="text-purple-700 font-medium">{edu.start} - {edu.end}</span>
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">{edu.institution}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-4 flex items-center gap-2">
+                    <span className="w-8 h-0.5 bg-amber-600 rounded-full"></span>
+                    Skills
+                  </h4>
+                  <div className="pl-10">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedExpert.skillsAndExpertise.domains.map((skill, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-md border border-amber-100">
+                          {skill}
+                        </span>
+                      ))}
+                      {selectedExpert.skillsAndExpertise.tools.map((skill, i) => (
+                        <span key={`tool-${i}`} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md border border-gray-200">
+                          {skill}
+                        </span>
                       ))}
                     </div>
                   </div>
+                </section>
+              </div>
 
-                  {/* Skills & Expertise */}
-                  <div className="space-y-4">
-                    <div className="border-l-3 border-amber-300 pl-3">
-                      <h4 className="text-sm font-medium text-gray-700 uppercase tracking-wider">Skills & Expertise</h4>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-sm font-medium text-gray-600">Mode</span>
-                        <span className="text-sm text-gray-700">{selectedExpert.skillsAndExpertise.mode}</span>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-600 mb-2 block">Domains</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedExpert.skillsAndExpertise.domains.map((domain, idx) => (
-                            <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-600 border border-green-100">
-                              {domain}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-600 mb-2 block">Tools</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedExpert.skillsAndExpertise.tools.map((tool, idx) => (
-                            <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                              {tool}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-600 mb-2 block">Languages</span>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedExpert.skillsAndExpertise.languages.map((lang, idx) => (
-                            <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
-                              {lang}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Verification - Full Width */}
-                  <div className="md:col-span-2 space-y-4">
-                    <div className="border-l-3 border-red-300 pl-3">
-                      <h4 className="text-sm font-medium text-gray-700 uppercase tracking-wider">Verification Documents</h4>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">Aadhar Card</span>
-                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">Pending</span>
-                        </div>
-                        <p className="text-sm text-gray-500">Document not uploaded</p>
-                      </div>
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">Company ID</span>
-                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded">Pending</span>
-                        </div>
-                        <p className="text-sm text-gray-500">Document not uploaded</p>
-                      </div>
-                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">LinkedIn Profile</span>
-                          <a 
-                            href={selectedExpert.verification.linkedin} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors duration-200"
-                          >
-                            View Profile
-                          </a>
-                        </div>
-                        <p className="text-sm text-gray-500">Professional network verification</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-3">
-                  <button
-                    onClick={() => alert("Expert rejected again")}
-                    className="px-5 py-2.5 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200 transition-all duration-200 border border-red-200"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => alert("Expert approved")}
-                    className="px-5 py-2.5 bg-green-100 text-green-700 text-sm font-medium rounded-lg hover:bg-green-200 transition-all duration-200 border border-green-200"
-                  >
-                    Approve
-                  </button>
-                </div>
+              {/* Use Flex-col-reverse on mobile orders action buttons at bottom */}
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
+                <button
+                  onClick={handleRejectClick}
+                  disabled={isProcessing}
+                  className="px-6 py-2.5 bg-white text-gray-600 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Update Rejection Reason
+                </button>
+                <button
+                  onClick={handleApprove}
+                  disabled={isProcessing}
+                  className="px-6 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isProcessing ? "Processing..." : "Approve & Activate"}
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </>
+
+      {/* Rejection Update Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsRejectModalOpen(false)}
+          ></div>
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Update Rejection Reason</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Update the reason for rejection. This will overwrite the previous reason.
+              </p>
+            </div>
+
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none text-sm"
+              placeholder="Enter new rejection reason..."
+            />
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitRejectionUpdate}
+                disabled={isProcessing || !rejectionReason.trim()}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isProcessing ? "Updating..." : "Update Rejection"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

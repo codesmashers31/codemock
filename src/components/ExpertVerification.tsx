@@ -74,7 +74,7 @@ const ExpertVerification = () => {
       });
 
       alert('Verification saved successfully!');
-      console.log('Server response:', response.data);
+
     } catch (error: any) {
       console.error('Error saving verification:', error);
       alert('Failed to save verification.');

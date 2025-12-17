@@ -40,22 +40,22 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
     const getOrCreatePeerConnection = useCallback(() => {
         if (pcRef.current) return pcRef.current;
 
-        console.log("Creating new RTCPeerConnection");
+
         const pc = new RTCPeerConnection(STUN_SERVERS);
 
         // ICE Candidates
         pc.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log(`Generated ICE Candidate: ${event.candidate.type} ${event.candidate.protocol}`);
+
                 onIceCandidateSend(event.candidate);
             } else {
-                console.log("ICE Candidate Gathering Complete");
+
             }
         };
 
         // Remote Track Handling - Critical Fix
         pc.ontrack = (event) => {
-            console.log("Track received:", event.streams[0]);
+
             if (event.streams && event.streams[0]) {
                 setRemoteStream(event.streams[0]);
             }
@@ -63,11 +63,11 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
 
         // Monitor Connection State
         pc.oniceconnectionstatechange = () => {
-            console.log(`ICE Connection State: ${pc.iceConnectionState}`);
+
         };
 
         pc.onconnectionstatechange = () => {
-            console.log(`Peer Connection State: ${pc.connectionState}`);
+
         };
 
         pcRef.current = pc;
@@ -76,16 +76,16 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
 
     // Helper: Add Tracks to PC
     const addLocalTracksToPC = useCallback((pc: RTCPeerConnection, stream: MediaStream) => {
-        console.log("Adding local tracks to PeerConnection. Stream ID:", stream.id);
+
         stream.getTracks().forEach((track) => {
             // Check if track already exists to avoid duplication
             const senders = pc.getSenders();
             const exists = senders.some(s => s.track === track);
             if (!exists) {
-                console.log(`Adding ${track.kind} track to PC (ID: ${track.id})`);
+
                 pc.addTrack(track, stream);
             } else {
-                console.log(`Track ${track.kind} (ID: ${track.id}) already exists in PC`);
+
             }
         });
     }, []);
@@ -96,7 +96,7 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
 
         // Reliability: Create Data Channel to ensure ICE gathering triggers even if no media
         const dc = pc.createDataChannel("chat");
-        dc.onopen = () => console.log("Data Channel Opened");
+        dc.onopen = () => { };
 
         if (localStream) {
             addLocalTracksToPC(pc, localStream);
@@ -111,7 +111,7 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true
             });
-            console.log("Offer created with SDP:", offer.sdp?.slice(0, 100) + "...");
+
             await pc.setLocalDescription(offer);
             return offer;
         } catch (error) {
@@ -123,7 +123,7 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
     // 4. Candidate: Handle Offer & Create Answer
     const handleReceivedOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
         const pc = getOrCreatePeerConnection();
-        console.log("Handle Received Offer. Has Local Stream:", !!localStream);
+
 
         if (localStream) {
             addLocalTracksToPC(pc, localStream);
@@ -184,7 +184,7 @@ export function useWebRTC(onIceCandidateSend: (candidate: RTCIceCandidate) => vo
             if (pc.remoteDescription) {
                 await pc.addIceCandidate(new RTCIceCandidate(candidate));
             } else {
-                console.log("Buffering ICE candidate (no remote description)");
+
                 candidateQueue.current.push(candidate);
             }
         } catch (error) {

@@ -264,6 +264,58 @@ export const getExpertProfile = async (req, res) => {
   }
 };
 
+/* -------------------- getExpertById (Admin/Public View) -------------------- */
+export const getExpertById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ success: false, message: "Invalid ID format" });
+    }
+
+    // Usually we look up by Expert _id, not userId, when we have the specific ID
+    let expert = await ExpertDetails.findById(id).lean();
+
+    // If not found, try finding by userId just in case
+    if (!expert) {
+      expert = await ExpertDetails.findOne({ userId: id }).lean();
+    }
+
+    if (!expert) return res.status(404).json({ success: false, message: "Expert not found" });
+
+    // Populate user details if needed (optional)
+    // const user = await User.findById(expert.userId).lean();
+
+    const profile = {
+      _id: expert._id,
+      userId: expert.userId,
+      name: expert.personalInformation?.userName || "",
+      mobile: expert.personalInformation?.mobile || "",
+      gender: expert.personalInformation?.gender || "",
+      dob: expert.personalInformation?.dob ? new Date(expert.personalInformation.dob).toISOString().split("T")[0] : "",
+      country: expert.personalInformation?.country || "",
+      state: expert.personalInformation?.state || "",
+      city: expert.personalInformation?.city || "",
+      title: expert.professionalDetails?.title || "",
+      company: expert.professionalDetails?.company || "",
+      totalExperience: expert.professionalDetails?.totalExperience ?? "",
+      industry: expert.professionalDetails?.industry || "",
+      previous: expert.professionalDetails?.previous || [],
+      education: expert.education || [],
+      skillsAndExpertise: expert.skillsAndExpertise || { mode: "Online", domains: [], tools: [], languages: [] },
+      availability: expert.availability || { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
+      verification: expert.verification || {},
+      status: expert.status || "pending",
+      photoUrl: expert.profileImage || "",
+      category: expert.personalInformation?.category || ""
+    };
+
+    return res.json({ success: true, profile });
+  } catch (err) {
+    console.error("getExpertById error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 /* -------------------- getPersonalInfo (uses resolver) -------------------- */
 export const getPersonalInfo = async (req, res) => {
   try {
@@ -295,22 +347,18 @@ export const updatePersonalInfo = async (req, res) => {
 
     const { userName = "", mobile = "", gender = "Male", dob = null, country = "", state = "", city = "", category = "" } = req.body;
 
-    console.log("📥 Received updatePersonalInfo request");
-    console.log("   Category from request body:", category);
-    console.log("   User ID:", queryUserId);
+
 
     // First, check if expert exists and if category is being changed
     const existingExpert = await ExpertDetails.findOne({ userId: queryUserId });
 
     if (existingExpert) {
-      console.log("   Existing category:", existingExpert.personalInformation?.category);
-    } else {
-      console.log("   No existing expert found - will create new");
+
     }
 
     if (existingExpert && existingExpert.personalInformation?.category && category && existingExpert.personalInformation.category !== category) {
       // Category already set and trying to change it
-      console.log("❌ Attempt to change category from", existingExpert.personalInformation.category, "to", category);
+      // Category already set and trying to change it
       return res.status(400).json({
         success: false,
         message: "Category has already been set and cannot be changed"
@@ -334,15 +382,15 @@ export const updatePersonalInfo = async (req, res) => {
       const allowedCategories = ["IT", "HR", "Business", "Design", "Marketing", "Finance", "AI"];
       if (allowedCategories.includes(category)) {
         updateObj["personalInformation.category"] = category;
-        console.log("🔥 Adding category to update:", category);
+
       } else {
-        console.log("⚠️ Invalid category:", category);
+
       }
     } else {
-      console.log("⚠️ No category provided in request");
+
     }
 
-    console.log("💾 Update object:", JSON.stringify(updateObj, null, 2));
+
 
     const expert = await ExpertDetails.findOneAndUpdate(
       { userId: queryUserId },
@@ -350,8 +398,7 @@ export const updatePersonalInfo = async (req, res) => {
       { new: true, upsert: true, setDefaultsOnInsert: true }
     );
 
-    console.log("✅ Personal info saved!");
-    console.log("   Final category in DB:", expert.personalInformation?.category);
+
 
     return res.status(200).json({ success: true, message: "Personal info updated successfully", data: expert });
   } catch (error) {
@@ -555,7 +602,7 @@ export const updateSkillsAndExpertise = async (req, res) => {
     if (Array.isArray(languages)) expert.skillsAndExpertise.languages = languages;
 
     await expert.save({ validateBeforeSave: false });
-    console.log("✅ Expert saved successfully");
+
     return res.status(200).json({ success: true, message: "Skills updated", data: expert.skillsAndExpertise });
   } catch (err) {
     console.error("updateSkillsAndExpertise error:", err);
@@ -664,86 +711,134 @@ export const deleteWeeklySlot = async (req, res) => {
   }
 };
 
+/* -------------------- getPendingExperts (Pending verification) -------------------- */
+export const getPendingExperts = async (req, res) => {
+  try {
+    const experts = await ExpertDetails.aggregate([
+      { $match: { status: "pending" } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$userDetails",
+          preserveNullAndEmptyArrays: false
+        }
+      }
+    ]);
+
+    return res.json({ success: true, data: experts });
+  } catch (err) {
+    console.error("getPendingExperts error:", err);
+    return res.status(500).json({ success: false, message: "Internal error" });
+  }
+};
+
+/* -------------------- getVerifiedExperts (Active experts only) -------------------- */
+/* -------------------- getRejectedExperts (Rejected experts only) -------------------- */
+export const getRejectedExperts = async (req, res) => {
+  try {
+    const experts = await ExpertDetails.aggregate([
+      { $match: { status: "rejected" } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$userDetails",
+          preserveNullAndEmptyArrays: false
+        }
+      }
+    ]);
+
+    return res.json({ success: true, data: experts });
+  } catch (err) {
+    console.error("getRejectedExperts error:", err);
+    return res.status(500).json({ success: false, message: "Internal error" });
+  }
+};
 /* -------------------- getVerifiedExperts (Active experts only) -------------------- */
 export const getVerifiedExperts = async (req, res) => {
   try {
     const { category } = req.query;
 
-    // Build query - only active experts
-    const query = { status: "Active" };
+    const pipeline = [
+      { $match: { status: "Active" } }
+    ];
 
-    // Optional category filter
     if (category && category !== "all") {
-      query["personalInformation.category"] = category;
+      pipeline[0].$match["personalInformation.category"] = category;
     }
 
-    const experts = await ExpertDetails.find(query).lean();
+    pipeline.push(
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$userDetails",
+          preserveNullAndEmptyArrays: false // Only show experts with valid user account
+        }
+      }
+    );
 
-    console.log(`📊 Found ${experts.length} active experts`);
+    const experts = await ExpertDetails.aggregate(pipeline);
 
-    // Return complete expert data for frontend processing
-    const formatted = experts.map(expert => {
-      console.log(`\n👤 Expert: ${expert.personalInformation?.userName}`);
-      console.log(`   - Category: ${expert.personalInformation?.category}`);
-      console.log(`   - Title: ${expert.professionalDetails?.title}`);
-      console.log(`   - Company: ${expert.professionalDetails?.company}`);
-      console.log(`   - Profile Image: ${expert.profileImage}`);
-      console.log(`   - Location: ${expert.personalInformation?.city}, ${expert.personalInformation?.state}`);
-      console.log(`   - Hourly Rate: ₹${expert.pricing?.hourlyRate || 500}/hr`);
-      console.log(`   - Avg Rating: ${expert.metrics?.avgRating || 0}`);
-      console.log(`   - Total Reviews: ${expert.metrics?.totalReviews || 0}`);
-
-      return {
-        _id: expert._id,
-        userId: expert.userId,
-        profileImage: expert.profileImage || "",
-        personalInformation: {
-          userName: expert.personalInformation?.userName || "",
-          mobile: expert.personalInformation?.mobile || "",
-          gender: expert.personalInformation?.gender || "",
-          dob: expert.personalInformation?.dob || null,
-          country: expert.personalInformation?.country || "",
-          state: expert.personalInformation?.state || "",
-          city: expert.personalInformation?.city || "",
-          category: expert.personalInformation?.category || "IT"
-        },
-        professionalDetails: {
-          title: expert.professionalDetails?.title || "",
-          company: expert.professionalDetails?.company || "",
-          totalExperience: expert.professionalDetails?.totalExperience || 0,
-          industry: expert.professionalDetails?.industry || "",
-          previous: expert.professionalDetails?.previous || []
-        },
-        skillsAndExpertise: {
-          mode: expert.skillsAndExpertise?.mode || "Online",
-          domains: expert.skillsAndExpertise?.domains || [],
-          tools: expert.skillsAndExpertise?.tools || [],
-          languages: expert.skillsAndExpertise?.languages || []
-        },
-        availability: {
-          sessionDuration: expert.availability?.sessionDuration || 30,
-          maxPerDay: expert.availability?.maxPerDay || 1,
-          weekly: expert.availability?.weekly || {},
-          breakDates: expert.availability?.breakDates || []
-        },
-        pricing: {
-          hourlyRate: expert.pricing?.hourlyRate || 500,
-          currency: expert.pricing?.currency || "INR",
-          customPricing: expert.pricing?.customPricing || false
-        },
-        metrics: {
-          totalSessions: expert.metrics?.totalSessions || 0,
-          completedSessions: expert.metrics?.completedSessions || 0,
-          cancelledSessions: expert.metrics?.cancelledSessions || 0,
-          avgRating: expert.metrics?.avgRating || 0,
-          totalReviews: expert.metrics?.totalReviews || 0,
-          avgResponseTime: expert.metrics?.avgResponseTime || 0
-        },
-        status: expert.status || "Active"
-      };
-    });
-
-    console.log(`\n✅ Returning ${formatted.length} formatted experts\n`);
+    // Format matches frontend expectation + joined data
+    const formatted = experts.map(expert => ({
+      _id: expert._id,
+      userId: expert.userId,
+      profileImage: expert.profileImage || "",
+      personalInformation: {
+        userName: expert.personalInformation?.userName || "",
+        mobile: expert.personalInformation?.mobile || "",
+        gender: expert.personalInformation?.gender || "",
+        dob: expert.personalInformation?.dob || null,
+        country: expert.personalInformation?.country || "",
+        state: expert.personalInformation?.state || "",
+        city: expert.personalInformation?.city || "",
+        category: expert.personalInformation?.category || "IT"
+      },
+      professionalDetails: {
+        title: expert.professionalDetails?.title || "",
+        company: expert.professionalDetails?.company || "",
+        totalExperience: expert.professionalDetails?.totalExperience || 0,
+        industry: expert.professionalDetails?.industry || "",
+        previous: expert.professionalDetails?.previous || []
+      },
+      skillsAndExpertise: {
+        mode: expert.skillsAndExpertise?.mode || "Online",
+        domains: expert.skillsAndExpertise?.domains || [],
+        tools: expert.skillsAndExpertise?.tools || [],
+        languages: expert.skillsAndExpertise?.languages || []
+      },
+      availability: {
+        sessionDuration: expert.availability?.sessionDuration || 30,
+        maxPerDay: expert.availability?.maxPerDay || 1,
+        weekly: expert.availability?.weekly || {},
+        breakDates: expert.availability?.breakDates || []
+      },
+      verification: expert.verification || {},
+      userDetails: {
+        email: expert.userDetails?.email || "",
+        _id: expert.userDetails?._id
+      }
+    }));
 
     return res.json({ success: true, data: formatted });
 
@@ -781,6 +876,57 @@ export const getAllExperts = async (req, res) => {
   } catch (err) {
     console.error("getAllExperts error:", err);
     return res.status(500).json({ success: false, message: "Internal error" });
+  }
+};
+
+/* -------------------- Approve Expert -------------------- */
+export const approveExpert = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const expert = await ExpertDetails.findByIdAndUpdate(
+      id,
+      { status: "Active" },
+      { new: true }
+    );
+
+    if (!expert) {
+      return res.status(404).json({ success: false, message: "Expert not found" });
+    }
+
+    return res.json({ success: true, message: "Expert approved successfully", data: expert });
+  } catch (err) {
+    console.error("approveExpert error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+/* -------------------- Reject Expert -------------------- */
+export const rejectExpert = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ success: false, message: "Rejection reason is required" });
+    }
+
+    const expert = await ExpertDetails.findByIdAndUpdate(
+      id,
+      {
+        status: "rejected",
+        rejectionReason: reason
+      },
+      { new: true }
+    );
+
+    if (!expert) {
+      return res.status(404).json({ success: false, message: "Expert not found" });
+    }
+
+    return res.json({ success: true, message: "Expert rejected successfully", data: expert });
+  } catch (err) {
+    console.error("rejectExpert error:", err);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

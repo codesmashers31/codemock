@@ -12,9 +12,9 @@ interface VideoTileProps {
   className?: string; // Allow custom styling
 }
 
-export function VideoTile({ 
-  name, 
-  isMainTile = false, 
+export function VideoTile({
+  name,
+  isMainTile = false,
   isSpeaking = false,
   cameraEnabled = true,
   micEnabled = true,
@@ -26,14 +26,14 @@ export function VideoTile({
 
   useEffect(() => {
     if (videoRef.current && stream) {
-      console.log(`[VideoTile] Directly assigning stream ${stream.id} to video element for ${name}`);
+
       videoRef.current.srcObject = stream;
       videoRef.current.onloadedmetadata = () => {
-          console.log(`[VideoTile] Metadata loaded for ${name}, attempting to play`);
-          videoRef.current?.play().catch(e => console.error(`[VideoTile] Play error for ${name}:`, e));
+
+        videoRef.current?.play().catch(e => console.error(`[VideoTile] Play error for ${name}:`, e));
       };
     } else if (!stream) {
-      console.log(`[VideoTile] No stream to attach for ${name}`);
+
     }
   }, [stream, name]);
 
@@ -78,7 +78,7 @@ export function VideoTile({
           />
         ) : (
           /* Simulated video feed overlay pattern */
-          <div className="absolute inset-0 opacity-20" 
+          <div className="absolute inset-0 opacity-20"
             style={{
               backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)',
               backgroundSize: '100px 100px'

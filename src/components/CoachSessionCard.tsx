@@ -75,7 +75,7 @@ const ProfileCard = ({ profile }: { profile: Profile }) => {
   const navigate = useNavigate();
 
   const handleBookNow = () => {
-    console.log(profile);
+
     navigate(`/book-session`, {
       state: {
         profile: profile,
@@ -510,7 +510,7 @@ export default function CoachSessionCard() {
         if (response.data?.success && response.data?.data) {
           // Map database data to Profile interface
           const mappedProfiles: Profile[] = response.data.data.map((expert: any) => {
-            console.log("📦 Expert data:", expert);
+
 
             // Get category
             const category = expert.personalInformation?.category || "IT";
@@ -551,15 +551,15 @@ export default function CoachSessionCard() {
               }
             }
 
-            console.log("✅ Calculated experience:", experience);
+
 
             // Get current or most recent company
             const company = getCurrentCompany(expert.professionalDetails, category);
-            console.log("🏢 Company:", company);
+
 
             // Get job title/role
             const role = getJobTitle(expert.professionalDetails, category);
-            console.log("💼 Role:", role);
+
 
             // Get skills from domains and tools
             const skills = [

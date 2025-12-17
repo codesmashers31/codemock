@@ -159,6 +159,11 @@ const expertSchema = new mongoose.Schema(
       default: "pending"
     },
 
+    rejectionReason: {
+      type: String,
+      trim: true
+    },
+
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

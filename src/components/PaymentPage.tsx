@@ -208,7 +208,7 @@ const PaymentPage: React.FC = () => {
         status: "confirmed"
       };
 
-      console.log("Creating Session with Payload:", sessionPayload);
+
 
       const sessionResponse = await axios.post('/api/sessions', sessionPayload);
 

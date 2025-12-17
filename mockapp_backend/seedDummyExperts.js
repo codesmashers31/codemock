@@ -8,7 +8,7 @@ dotenv.config();
 const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI_LOCAL || process.env.MONGO_URI || 'mongodb://localhost:27017/mockdata');
-        console.log('✅ MongoDB Connected');
+
     } catch (error) {
         console.error('❌ MongoDB Connection Error:', error);
         process.exit(1);
@@ -269,18 +269,18 @@ const seedDatabase = async () => {
     try {
         await connectDB();
 
-        console.log('🗑️  Clearing existing data...');
+
         // Clear existing expert data
         const expertUsers = await User.find({ userType: 'expert' });
         const expertUserIds = expertUsers.map(u => u._id);
         await ExpertDetails.deleteMany({ userId: { $in: expertUserIds } });
         await User.deleteMany({ userType: 'expert' });
-        console.log('✅ Cleared existing expert data');
 
-        console.log('📝 Generating dummy data...');
+
+
         const dummyData = generateDummyExperts();
 
-        console.log(`👥 Creating ${dummyData.length} users and experts...`);
+
 
         for (const data of dummyData) {
             // Hash password
@@ -300,20 +300,10 @@ const seedDatabase = async () => {
             });
             await expert.save();
 
-            console.log(`✅ Created: ${data.expert.personalInformation.userName} (${data.expert.personalInformation.category})`);
+
         }
 
-        console.log('\n🎉 Database seeded successfully!');
-        console.log(`📊 Total Experts Created: ${dummyData.length}`);
-        console.log('\n📋 Summary by Category:');
-        console.log('  IT: 4 experts');
-        console.log('  HR: 4 experts');
-        console.log('  Business: 4 experts');
-        console.log('  Design: 4 experts');
-        console.log('  Marketing: 4 experts');
-        console.log('  Finance: 4 experts');
-        console.log('  AI: 4 experts');
-        console.log('\n🔐 All users have password: password123');
+
 
         process.exit(0);
     } catch (error) {

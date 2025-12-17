@@ -45,7 +45,7 @@ const ExpertEducation = () => {
             } catch (err: any) {
                 if (err.response && err.response.status === 404) {
                     // alert(err.response.data.message); // Personal info missing - suppressing alert on load
-                    console.log("Profile not found or empty");
+
                 } else {
                     console.error("Failed to fetch education:", err);
                 }

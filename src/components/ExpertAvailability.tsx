@@ -23,7 +23,7 @@ const ExpertAvailability = () => {
 
 
 
-  //console.log(user);
+
 
   /* user_id removed */
 

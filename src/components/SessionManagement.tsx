@@ -1,91 +1,78 @@
-import React, { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import axios from "axios";
+import { ChevronLeft, ChevronRight, Search, RefreshCw, ArrowUpDown } from "lucide-react";
+import { Toaster, toast } from "sonner";
 
-// Dummy session data
-const initialSessions = [
-  {
-    id: 1,
-    expert: "Rahul Mehta",
-    user: "Pooja Sri",
-    date: "2025-12-15",
-    time: "10:00 AM - 11:00 AM",
-    duration: "1 hour",
-    mode: "Online",
-    status: "Pending",
-    amount: 1500,
-  },
-  {
-    id: 2,
-    expert: "Anjali Sharma",
-    user: "Ravi Kumar",
-    date: "2025-12-13",
-    time: "2:00 PM - 2:30 PM",
-    duration: "30 mins",
-    mode: "Offline",
-    status: "Completed",
-    amount: 800,
-  },
-  {
-    id: 3,
-    expert: "Rahul Mehta",
-    user: "Amit Joshi",
-    date: "2025-12-14",
-    time: "11:00 AM - 12:00 PM",
-    duration: "1 hour",
-    mode: "Online",
-    status: "Booked",
-    amount: 1200,
-  },
-  {
-    id: 4,
-    expert: "Priya Verma",
-    user: "Karan Singh",
-    date: "2025-12-16",
-    time: "3:00 PM - 4:00 PM",
-    duration: "1 hour",
-    mode: "Online",
-    status: "Cancelled",
-    amount: 1000,
-  },
-  {
-    id: 5,
-    expert: "Vikram Patel",
-    user: "Sonia Reddy",
-    date: "2025-12-12",
-    time: "9:00 AM - 10:00 AM",
-    duration: "1 hour",
-    mode: "Offline",
-    status: "Completed",
-    amount: 2000,
-  },
-];
+interface Session {
+  _id: string;
+  sessionId: string;
+  expertId: string;
+  candidateId: string;
+  expertName?: string;
+  candidateName?: string;
+  startTime: string; // ISO Date string
+  endTime: string;
+  topics: string[];
+  price: number;
+  status: string; // 'pending' | 'confirmed' | 'completed' | 'cancelled'
+  duration?: number;
+  meetingLink?: string;
+}
 
 export default function SessionManagement() {
-  const [sessions, setSessions] = useState(initialSessions);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("All");
-  const [searchExpert, setSearchExpert] = useState("");
-  const [searchUser, setSearchUser] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortAsc, setSortAsc] = useState(true);
-  const pageSize = 5;
+  const [sortAsc, setSortAsc] = useState(false); // Default desc (newest first)
+  const pageSize = 8;
+
+  const fetchSessions = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:3000/api/sessions/all");
+      if (response.data.success) {
+        // Transform incoming data to handle MongoDB Extended JSON format
+        const formattedSessions = response.data.data.map((session: any) => ({
+          ...session,
+          _id: session._id?.$oid || session._id,
+          startTime: session.startTime?.$date || session.startTime,
+          endTime: session.endTime?.$date || session.endTime,
+        }));
+        setSessions(formattedSessions);
+      }
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      toast.error("Failed to load sessions");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
 
   // Filtered sessions
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
-      const matchesStatus =
-        filterStatus === "All" || s.status === filterStatus;
-      const matchesExpert = s.expert
-        .toLowerCase()
-        .includes(searchExpert.toLowerCase());
-      const matchesUser = s.user.toLowerCase().includes(searchUser.toLowerCase());
-      return matchesStatus && matchesExpert && matchesUser;
-    });
-  }, [sessions, filterStatus, searchExpert, searchUser]);
+      const matchesStatus = filterStatus === "All" || s.status.toLowerCase() === filterStatus.toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        (s.expertName?.toLowerCase() || "").includes(searchLower) ||
+        (s.candidateName?.toLowerCase() || "").includes(searchLower) ||
+        s.sessionId.toLowerCase().includes(searchLower);
 
-  // Sort by date & time
+      return matchesStatus && matchesSearch;
+    });
+  }, [sessions, filterStatus, searchTerm]);
+
+  // Sort by date
   const sortedSessions = useMemo(() => {
     return [...filteredSessions].sort((a, b) => {
-      const dateA = new Date(a.date + " " + a.time.split(" - ")[0]);
-      const dateB = new Date(b.date + " " + b.time.split(" - ")[0]);
+      const dateA = new Date(a.startTime).getTime();
+      const dateB = new Date(b.startTime).getTime();
       return sortAsc ? dateA - dateB : dateB - dateA;
     });
   }, [filteredSessions, sortAsc]);
@@ -97,343 +84,241 @@ export default function SessionManagement() {
     currentPage * pageSize
   );
 
-  const handlePageChange = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
-  // Status color mapping
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'Booked': return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'Completed': return 'bg-green-50 text-green-700 border-green-200';
-      case 'Cancelled': return 'bg-red-50 text-red-700 border-red-200';
+  // Helper functions for UI
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'confirmed': return 'bg-blue-50 text-blue-700 border-blue-200'; // "Booked" equivalent
+      case 'completed': return 'bg-green-50 text-green-700 border-green-200';
+      case 'cancelled': return 'bg-red-50 text-red-700 border-red-200';
+      case 'upcoming': return 'bg-purple-50 text-purple-700 border-purple-200';
       default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
-  // Mode color mapping
-  const getModeColor = (mode) => {
-    return mode === 'Online' 
-      ? 'bg-purple-50 text-purple-700 border-purple-200' 
-      : 'bg-indigo-50 text-indigo-700 border-indigo-200';
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
   };
 
   // Calculate summary stats
   const stats = useMemo(() => ({
     totalSessions: sessions.length,
-    totalRevenue: sessions.reduce((sum, s) => sum + s.amount, 0),
-    completedSessions: sessions.filter(s => s.status === 'Completed').length,
-    pendingSessions: sessions.filter(s => s.status === 'Pending').length,
+    totalRevenue: sessions.reduce((sum, s) => sum + (s.price || 0), 0),
+    completedSessions: sessions.filter(s => s.status.toLowerCase() === 'completed').length,
+    upcomingSessions: sessions.filter(s => ['confirmed', 'upcoming'].includes(s.status.toLowerCase())).length,
   }), [sessions]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Session Management</h1>
-          <p className="text-gray-600 mt-1 text-sm">Manage and monitor all consultation sessions</p>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <Toaster position="top-right" richColors />
+
+      {/* Header */}
+      <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Session Management</h2>
+          <p className="text-sm text-gray-500 mt-1">Monitor all consultation sessions across the platform</p>
         </div>
+        <button
+          onClick={fetchSessions}
+          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Refresh Data"
+        >
+          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+        </button>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-blue-50 rounded-lg border border-blue-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Sessions</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{stats.totalSessions}</p>
-              </div>
-              <div className="p-3 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-green-50 rounded-lg border border-green-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">
-                  ₹{stats.totalRevenue.toLocaleString()}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-emerald-50 rounded-lg border border-emerald-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Completed</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{stats.completedSessions}</p>
-              </div>
-              <div className="p-3 rounded-lg">
-                <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-amber-50 rounded-lg border border-amber-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Pending</p>
-                <p className="text-2xl font-semibold text-gray-900 mt-1">{stats.pendingSessions}</p>
-              </div>
-              <div className="p-3 rounded-lg">
-                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6 bg-gray-50/50 border-b border-gray-100">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Revenue</span>
+          <span className="text-2xl font-bold text-gray-900 mt-1">₹{stats.totalRevenue.toLocaleString()}</span>
         </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Sessions</h2>
-              <p className="text-sm text-gray-600 mt-1">Filter and manage consultation sessions</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              >
-                <option value="All">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Booked">Booked</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search Expert</label>
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={searchExpert}
-                  onChange={(e) => setSearchExpert(e.target.value)}
-                  placeholder="Expert name..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search User</label>
-              <div className="relative">
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  value={searchUser}
-                  onChange={(e) => setSearchUser(e.target.value)}
-                  placeholder="User name..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                />
-              </div>
-            </div>
-          </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+          <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Sessions</span>
+          <span className="text-2xl font-bold text-gray-900 mt-1">{stats.totalSessions}</span>
         </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+          <span className="text-xs font-medium text-emerald-600 uppercase tracking-wide">Completed</span>
+          <span className="text-2xl font-bold text-emerald-700 mt-1">{stats.completedSessions}</span>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+          <span className="text-xs font-medium text-blue-600 uppercase tracking-wide">Upcoming</span>
+          <span className="text-2xl font-bold text-blue-700 mt-1">{stats.upcomingSessions}</span>
+        </div>
+      </div>
 
-        {/* Session Table */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Session List</h3>
-                <p className="text-sm text-gray-600 mt-1">Click on Date & Time to sort</p>
-              </div>
-              <span className="text-sm text-gray-500">
-                {filteredSessions.length} sessions found
-              </span>
+      {/* Controls */}
+      <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
             </div>
+            <input
+              type="text"
+              placeholder="Search user, expert or ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            />
           </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+          >
+            <option value="All">All Status</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+      </div>
 
+      {/* Responsive Table Container */}
+      <div className="w-full overflow-hidden">
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Expert</th>
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+            <table className="w-full text-left min-w-[800px]">
+              <thead className="bg-gray-50/50">
+                <tr>
                   <th
-                    className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100/50 transition-colors"
+                    className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 transition-colors group select-none"
                     onClick={() => setSortAsc(!sortAsc)}
                   >
-                    <div className="flex items-center gap-1">
-                      Date & Time
-                      <span className="text-gray-400">
-                        {sortAsc ? "▲" : "▼"}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      Session Details
+                      <ArrowUpDown className={`w-3.5 h-3.5 ${sortAsc ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
                     </div>
                   </th>
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Expert</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Amount</th>
                 </tr>
               </thead>
-
-              <tbody>
-                {paginatedSessions.map((session) => (
-                  <tr key={session.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="py-2 px-6">
-                      <div className="flex items-center gap-3">
-                
-                        <div>
-                          <p className="font-medium text-gray-900">{session.expert}</p>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedSessions.length > 0 ? (
+                  paginatedSessions.map((session) => (
+                    <tr key={session._id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900 text-sm">
+                            {formatDate(session.startTime)}
+                          </span>
+                          <span className="text-xs text-gray-500 mt-0.5">
+                            {formatTime(session.startTime)} - {formatTime(session.endTime)}
+                          </span>
+                          <span className="text-xs text-blue-600 mt-1 inline-block bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 self-start">
+                            {session.topics?.[0] || "Consultation"}
+                          </span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-2 px-4">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <p className="font-medium text-gray-900">{session.user}</p>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-900">{session.expertName || "Unknown Expert"}</span>
+                          <span className="text-xs text-gray-500 font-mono mt-0.5 truncate max-w-[120px]" title={session.expertId}>
+                            ID: {session.expertId.slice(-6)}
+                          </span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-2 px-4 w-96">
-                      <div className="flex flex-col  whitespace-nowrap">
-                        <p className=" text-gray-900">{session.date}</p>
-                        <p className="text-sm text-gray-500">{session.time}</p>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                        {session.duration}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getModeColor(session.mode)}`}>
-                        {session.mode}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(session.status)}`}>
-                        
-                        {session.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="font-medium text-gray-900">
-                        ₹{session.amount.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3  whitespace-nowrap">
-                        {session.status !== "Completed" && (
-                        <button className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">
-                          Reschedule
-                        </button>
-                        )}
-
-                        {session.status !== "Completed" && session.status !== "Cancelled" && (
-                          <button className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors">
-                            Mark as Complete
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                
-                {paginatedSessions.length === 0 && (
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-900">{session.candidateName || "Unknown User"}</span>
+                          <span className="text-xs text-gray-500 font-mono mt-0.5 truncate max-w-[120px]" title={session.candidateId}>
+                            ID: {session.candidateId.slice(-6)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(session.status)}`}>
+                          {session.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <span className="text-sm font-bold text-gray-900">
+                          ₹{session.price?.toLocaleString() || 0}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center">
-                      <div className="max-w-md mx-auto">
-                        <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">No sessions found</h3>
-                        <p className="text-gray-600">Try adjusting your search or filter criteria</p>
-                      </div>
+                    <td colSpan={5} className="py-12 text-center text-gray-500 text-sm">
+                      No sessions found matching your criteria.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+        )}
+      </div>
 
-          {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-200">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="text-sm text-gray-600">
-                Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> -{" "}
-                <span className="font-medium">{Math.min(currentPage * pageSize, filteredSessions.length)}</span> of{" "}
-                <span className="font-medium">{filteredSessions.length}</span> sessions
-              </div>
+      {/* Pagination Footer */}
+      {filteredSessions.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-sm text-gray-500 hidden sm:inline-block">
+            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredSessions.length)} of {filteredSessions.length}
+          </span>
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-lg border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                // Logic to show sliding window of pages could go here, for now simple first 5
+                let pageToShow = i + 1;
+                if (totalPages > 5 && currentPage > 3) {
+                  pageToShow = currentPage - 2 + i;
+                }
+                if (pageToShow > totalPages) return null; // Don't render if beyond total
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                    currentPage === 1 
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Previous
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                        pageNum === currentPage
-                          ? "bg-blue-600 text-white"
-                          : "text-gray-700 hover:bg-gray-100"
+                return (
+                  <button
+                    key={pageToShow}
+                    onClick={() => handlePageChange(pageToShow)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === pageToShow
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-50'
                       }`}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                    currentPage === totalPages
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  Next
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
+                  >
+                    {pageToShow}
+                  </button>
+                );
+              })}
             </div>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-lg border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

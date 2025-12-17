@@ -20,7 +20,12 @@ import {
   uploadVerificationDocs,
   uploadVerificationMiddleware, getExpertProfileImage,
   getAllExperts,
-  getVerifiedExperts
+  getVerifiedExperts,
+  getPendingExperts,
+  getExpertById,
+  getRejectedExperts,
+  approveExpert,
+  rejectExpert
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
@@ -31,13 +36,18 @@ const router = express.Router();
 
 // Public Routes
 router.get("/all-experts", getAllExperts);
+router.get("/pending", getPendingExperts);
 router.get("/verified", getVerifiedExperts);
+router.get("/rejected", getRejectedExperts);
+router.put("/approve/:id", approveExpert);
+router.put("/reject/:id", rejectExpert);
 
 // Protect all expert routes
 router.use(authenticateToken);
 
 // Profile
 router.get("/profile", getExpertProfile);
+router.get("/admin/profile/:id", getExpertById);
 router.post("/profile/photo", uploadMiddleware.single("photo"), uploadProfilePhoto);
 router.get("/profile/image", getExpertProfileImage);
 

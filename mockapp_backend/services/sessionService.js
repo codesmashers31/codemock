@@ -110,7 +110,7 @@ export const seedTestSession = async () => {
     let session = await Session.findOne({ sessionId: testSessionId });
 
     if (!session) {
-        console.log("🌱 Seeding Shared Test Session (9-10 AM)...");
+
         session = new Session({
             sessionId: testSessionId,
             expertId: sharedExpertId, // Unified Expert
@@ -149,4 +149,58 @@ export const seedTestSession = async () => {
     }
 
     return [session, userSession];
+};
+
+export const getAllSessions = async () => {
+    // Import Expert and User models dynamically to avoid circular deps if any
+    const Expert = (await import('../models/expertModel.js')).default;
+    const User = (await import('../models/User.js')).default;
+    const mongoose = (await import('mongoose')).default;
+
+    const sessions = await Session.find().sort({ startTime: -1 }).lean();
+
+    const enrichedSessions = await Promise.all(
+        sessions.map(async (session) => {
+            let expert = null;
+            let candidate = null;
+
+            // 1. Fetch Expert (try userId matching first)
+            if (mongoose.Types.ObjectId.isValid(session.expertId)) {
+                expert = await Expert.findOne({ userId: session.expertId }).populate('userId');
+                // Fallback: maybe expertId IS the expert document ID?
+                if (!expert) {
+                    expert = await Expert.findById(session.expertId).populate('userId');
+                }
+            } else {
+                // expertId is email or other string
+                // Strategy for seeded data: expertId might be email
+                const userByEmail = await User.findOne({ email: session.expertId });
+                if (userByEmail) {
+                    expert = await Expert.findOne({ userId: userByEmail._id }).populate('userId');
+                }
+            }
+
+            // 2. Fetch Candidate (User)
+            if (mongoose.Types.ObjectId.isValid(session.candidateId)) {
+                candidate = await User.findById(session.candidateId);
+            } else {
+                // Strategy for seeded data: candidateId might be string alias or email?
+                // Let's assume for now if not ObjectId it might be a user email if strict match
+                candidate = await User.findOne({ email: session.candidateId });
+            }
+
+            return {
+                ...session,
+                expertName: expert?.personalInformation?.userName || expert?.userId?.name || session.expertId,
+                candidateName: candidate?.name || session.candidateId,
+                topic: session.topics?.[0] || "General Consultation",
+                status: session.status,
+                amount: session.price,
+                date: session.startTime,
+                duration: session.duration || "N/A"
+            };
+        })
+    );
+
+    return enrichedSessions;
 };
