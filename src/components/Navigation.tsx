@@ -45,7 +45,7 @@ const Navigation = () => {
     const fetchProfileImage = async () => {
       if (user?.id) {
         try {
-          const response = await fetch('http://localhost:3000/api/user/profile', {
+          const response = await fetch('/api/user/profile', {
             headers: { userid: user.id }
           });
           const data = await response.json();

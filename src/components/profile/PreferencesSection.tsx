@@ -38,7 +38,7 @@ export default function PreferencesSection({ profileData, onUpdate }: Preference
         try {
             setSaving(true);
             const response = await axios.put(
-                "http://localhost:3000/api/user/profile/preferences",
+                "/api/user/profile/preferences",
                 formData,
                 { headers: { userid: user?.id } }
             );

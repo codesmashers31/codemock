@@ -34,7 +34,7 @@ export default function SkillsSection({ profileData, onUpdate }) {
         try {
             setSaving(true);
             const response = await axios.put(
-                "http://localhost:3000/api/user/profile/skills",
+                "/api/user/profile/skills",
                 skills,
                 { headers: { userid: user?.id } }
             );

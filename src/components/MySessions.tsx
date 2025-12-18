@@ -66,7 +66,7 @@ const MySessions = () => {
           return;
         }
 
-        const res = await fetch(`http://localhost:3000/api/sessions/candidate/${candidateId}`);
+        const res = await fetch(`/api/sessions/candidate/${candidateId}`);
 
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -138,7 +138,7 @@ const MySessions = () => {
   const handleJoinMeeting = async (session: any) => {
     const candidateId = user?.id || "";
     try {
-      const res = await fetch(`http://localhost:3000/api/sessions/${session.sessionId}/join`, {
+      const res = await fetch(`/api/sessions/${session.sessionId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: candidateId })

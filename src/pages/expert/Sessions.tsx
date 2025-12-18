@@ -16,7 +16,7 @@ export default function Sessions() {
 
     useEffect(() => {
         // Fetch sessions for this specific expert ID
-        fetch(`http://localhost:3000/api/sessions/user/${currentUserId}/role/expert`)
+        fetch(`/api/sessions/user/${currentUserId}/role/expert`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
@@ -31,7 +31,7 @@ export default function Sessions() {
     const handleJoin = async (session: any) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:3000/api/sessions/${session.sessionId}/join`, {
+            const res = await fetch(`/api/sessions/${session.sessionId}/join`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUserId })

@@ -103,7 +103,9 @@ export default function LiveMeeting() {
       alert("Meeting has been ended by the host.");
       cleanup();
       navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
-    }
+      navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
+    },
+    isMediaReady: !!localStream
   });
 
   // Sync Ref

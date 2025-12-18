@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   const fetchProfile = async (): Promise<User | null> => {
     try {
-      const response = await axios.get('http://localhost:3000/api/auth/profile');
+      const response = await axios.get('/api/auth/profile');
       const userData: User = response.data.user;
 
       // Normalize userId or _id to id for consistency
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<User> => {
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', { email, password });
       const { token: newToken, user: userData } = response.data;
       if (!newToken || !userData) throw new Error('Invalid response from server');
 
@@ -122,7 +122,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   const register = async (email: string, password: string, userType: string, name: string) => {
     try {
-      await axios.post('http://localhost:3000/api/auth/register', { email, password, userType, name });
+      await axios.post('/api/auth/register', { email, password, userType, name });
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Registration failed');
     }

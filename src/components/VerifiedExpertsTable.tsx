@@ -68,7 +68,7 @@ const VerifiedExpertsTable = () => {
   useEffect(() => {
     const fetchVerifiedExperts = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/expert/verified");
+        const response = await axios.get("/api/expert/verified");
         if (response.data.success) {
           setVerifiedExperts(response.data.data);
         }

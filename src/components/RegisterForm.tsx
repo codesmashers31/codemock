@@ -81,7 +81,7 @@ export const RegisterForm = () => {
     setIsLoading(true);
     setError("");
     try {
-      await axios.post("http://localhost:3000/api/auth/verify-otp", {
+      await axios.post("/api/auth/verify-otp", {
         email: formData.email,
         otp: formData.otp
       });
@@ -142,7 +142,7 @@ export const RegisterForm = () => {
 
   const sendOtp = async () => {
     try {
-      const response = await axios.post("http://localhost:3000/api/auth/send-otp", {
+      const response = await axios.post("/api/auth/send-otp", {
         email: formData.email,
         userType: formData.userType
       });

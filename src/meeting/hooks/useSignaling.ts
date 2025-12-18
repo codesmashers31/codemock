@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SIGNALING_SERVER_URL = 'http://192.168.31.11:3000';
+import { SOCKET_URL } from '../../config';
+
+const SIGNALING_SERVER_URL = SOCKET_URL;
 
 interface UseSignalingProps {
     meetingId: string;
@@ -13,6 +15,7 @@ interface UseSignalingProps {
     onBothReady: () => void;
     onUserLeft: (userId: string) => void;
     onMeetingEnded: () => void;
+    isMediaReady: boolean;
 }
 
 export function useSignaling({
@@ -25,6 +28,7 @@ export function useSignaling({
     onBothReady,
     onUserLeft,
     onMeetingEnded,
+    isMediaReady
 }: UseSignalingProps) {
     const socketRef = useRef<Socket | null>(null);
 
@@ -51,6 +55,14 @@ export function useSignaling({
             return;
         }
 
+        if (!isMediaReady) {
+            // Wait for media before connecting to avoid race conditions (Receive One-Way Video issue)
+            console.log('[useSignaling] Waiting for Media to be ready...');
+            return;
+        }
+
+        console.log('[useSignaling] Media Ready! Connecting to socket...');
+
         // Initialize Socket
         socketRef.current = io(SIGNALING_SERVER_URL, {
             transports: ['websocket'],
@@ -59,8 +71,7 @@ export function useSignaling({
         const socket = socketRef.current;
 
         socket.on('connect', () => {
-
-
+            console.log('[useSignaling] Connected to socket. Joining room...');
             socket.emit('join-room', { meetingId, role, userId });
         });
 
@@ -75,7 +86,7 @@ export function useSignaling({
         return () => {
             socket.disconnect();
         };
-    }, [meetingId, role, userId]); // Stable dependencies
+    }, [meetingId, role, userId, isMediaReady]); // Stable dependencies
 
     const sendOffer = (sdp: RTCSessionDescriptionInit) => {
         socketRef.current?.emit('offer', { sdp, meetingId });

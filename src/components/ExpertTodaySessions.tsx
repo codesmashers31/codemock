@@ -27,7 +27,7 @@ const ExpertTodaySessions = () => {
 
   const handleHostMeeting = async (s: any) => {
     try {
-      const response = await fetch('http://localhost:3000/meeting/create', {
+      const response = await fetch('/meeting/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ expertId: '123' }) // Replace with real expert ID

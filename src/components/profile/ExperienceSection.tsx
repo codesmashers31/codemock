@@ -49,7 +49,7 @@ export default function ExperienceSection({ profileData, onUpdate }: ExperienceS
         try {
             setSaving(true);
             const response = await axios.put(
-                "http://localhost:3000/api/user/profile/experience",
+                "/api/user/profile/experience",
                 { experience },
                 { headers: { userid: user?.id } }
             );

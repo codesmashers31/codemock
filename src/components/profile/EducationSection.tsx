@@ -49,7 +49,7 @@ export default function EducationSection({ profileData, onUpdate }: EducationSec
         try {
             setSaving(true);
             const response = await axios.put(
-                "http://localhost:3000/api/user/profile/education",
+                "/api/user/profile/education",
                 { education },
                 { headers: { userid: user?.id } }
             );

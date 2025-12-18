@@ -41,7 +41,7 @@ export default function UserProfile() {
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const response = await axios.get("http://localhost:3000/api/user/profile", {
+            const response = await axios.get("/api/user/profile", {
                 headers: { userid: user?.id }
             });
 

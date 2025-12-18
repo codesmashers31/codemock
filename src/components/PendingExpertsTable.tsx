@@ -73,7 +73,7 @@ const PendingExpertsTable: React.FC = () => {
     useEffect(() => {
         const fetchPendingExperts = async () => {
             try {
-                const response = await axios.get("http://localhost:3000/api/expert/pending");
+                const response = await axios.get("/api/expert/pending");
                 if (response.data.success) {
                     setPendingExperts(response.data.data);
                 }
@@ -97,7 +97,7 @@ const PendingExpertsTable: React.FC = () => {
         if (!selectedExpert) return;
         setIsProcessing(true);
         try {
-            const response = await axios.put(`http://localhost:3000/api/expert/approve/${selectedExpert._id}`);
+            const response = await axios.put(`/api/expert/approve/${selectedExpert._id}`);
             if (response.data.success) {
                 toast.success("Expert approved successfully!");
                 setPendingExperts(prev => prev.filter(exp => exp._id !== selectedExpert._id));
@@ -124,7 +124,7 @@ const PendingExpertsTable: React.FC = () => {
 
         setIsProcessing(true);
         try {
-            const response = await axios.put(`http://localhost:3000/api/expert/reject/${selectedExpert._id}`, {
+            const response = await axios.put(`/api/expert/reject/${selectedExpert._id}`, {
                 reason: rejectionReason
             });
 

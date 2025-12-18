@@ -31,7 +31,7 @@ export default function SessionManagement() {
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:3000/api/sessions/all");
+      const response = await axios.get("/api/sessions/all");
       if (response.data.success) {
         // Transform incoming data to handle MongoDB Extended JSON format
         const formattedSessions = response.data.data.map((session: any) => ({

@@ -33,7 +33,7 @@ const BookSessionPage = () => {
           setLoading(true);
           // Since there isn't a direct public by-ID endpoint, we fetch all verified experts and filter
           // Optimized approach would be adding a specific endpoint in backend
-          const response = await axios.get("http://localhost:3000/api/expert/verified");
+          const response = await axios.get("/api/expert/verified");
 
 
           if (response.data?.success && response.data?.data) {
@@ -73,7 +73,7 @@ const BookSessionPage = () => {
       const fetchSessions = async () => {
         try {
           // Assuming this endpoint returns all sessions for the expert
-          const res = await axios.get(`http://localhost:3000/api/sessions/expert/${expertId}`);
+          const res = await axios.get(`/api/sessions/expert/${expertId}`);
           if (Array.isArray(res.data)) {
             setBookedSessions(res.data);
           }

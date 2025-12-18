@@ -35,7 +35,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     if (!user) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`http://localhost:3000/api/notifications`); // <-- adapt if required
+      const res = await axios.get(`/api/notifications`); // <-- adapt if required
       // expect res.data.notifications: Notification[]
       setNotifications(res.data.notifications || []);
     } catch (err) {
@@ -81,7 +81,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
     try {
       // optimistic update
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-      await axios.post(`http://localhost:3000/api/notifications/${id}/read`); // adapt to your backend
+      await axios.post(`/api/notifications/${id}/read`); // adapt to your backend
     } catch (err) {
       console.error("Failed to mark notification read", err);
       // rollback if needed - simple approach: refetch
@@ -93,7 +93,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
   const markAllAsRead = async () => {
     try {
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      await axios.post(`http://localhost:3000/api/notifications/mark-all-read`); // adapt to your backend
+      await axios.post(`/api/notifications/mark-all-read`); // adapt to your backend
     } catch (err) {
       console.error("Failed to mark all read", err);
       fetchNotifications();
@@ -114,7 +114,7 @@ export default function TopNav({ onOpenSidebar }: { onOpenSidebar?: () => void }
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/expert/profile");
+        const res = await axios.get("/api/expert/profile");
 
 
 

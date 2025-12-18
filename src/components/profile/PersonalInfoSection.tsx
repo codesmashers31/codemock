@@ -84,7 +84,7 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
         try {
             setSaving(true);
             const response = await axios.put(
-                "http://localhost:3000/api/user/profile/personal",
+                "/api/user/profile/personal",
                 formData,
                 { headers: { userid: user?.id } }
             );
@@ -111,7 +111,7 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
             formData.append("profileImage", file);
 
             const response = await axios.post(
-                "http://localhost:3000/api/user/profile/image",
+                "/api/user/profile/image",
                 formData,
                 {
                     headers: {

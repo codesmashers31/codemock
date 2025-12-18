@@ -15,7 +15,7 @@ const Sidebar = () => {
     const fetchProfile = async () => {
       if (user?.id) {
         try {
-          const response = await axios.get("http://localhost:3000/api/user/profile", {
+          const response = await axios.get("/api/user/profile", {
             headers: { userid: user.id }
           });
           if (response.data.success) {

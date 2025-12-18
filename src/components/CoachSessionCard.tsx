@@ -505,7 +505,7 @@ export default function CoachSessionCard() {
     const fetchExperts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:3000/api/expert/verified");
+        const response = await axios.get("/api/expert/verified");
 
         if (response.data?.success && response.data?.data) {
           // Map database data to Profile interface
