@@ -239,8 +239,8 @@ const VerifiedExpertsTable = () => {
                       key={page}
                       onClick={() => handlePageChange(page)}
                       className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                          ? 'bg-green-600 text-white'
-                          : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-green-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-50'
                         }`}
                     >
                       {page}
@@ -301,7 +301,7 @@ const VerifiedExpertsTable = () => {
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-50">
                       <span className="text-sm text-gray-500">Location</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedExpert.personalInformation.city}, {selectedExpert.personalInformation.country}</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.personalInformation?.city || "N/A"}, {selectedExpert.personalInformation?.country || "N/A"}</span>
                     </div>
                   </div>
                 </section>
@@ -323,7 +323,7 @@ const VerifiedExpertsTable = () => {
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-50">
                       <span className="text-sm text-gray-500">Experience</span>
-                      <span className="text-sm font-medium text-gray-900">{selectedExpert.professionalDetails.totalExperience} years</span>
+                      <span className="text-sm font-medium text-gray-900">{selectedExpert.professionalDetails?.totalExperience || 0} years</span>
                     </div>
                   </div>
                 </section>
@@ -337,15 +337,19 @@ const VerifiedExpertsTable = () => {
                     Education
                   </h4>
                   <div className="pl-10 space-y-3">
-                    {selectedExpert.education.map((edu, i) => (
-                      <div key={i} className="p-3 bg-purple-50/50 rounded-lg border border-purple-100">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-semibold text-gray-900">{edu.degree}</span>
-                          <span className="text-purple-700 font-medium">{edu.start} - {edu.end}</span>
+                    {selectedExpert.education?.length > 0 ? (
+                      selectedExpert.education.map((edu, i) => (
+                        <div key={i} className="p-3 bg-purple-50/50 rounded-lg border border-purple-100">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-semibold text-gray-900">{edu.degree}</span>
+                            <span className="text-purple-700 font-medium">{edu.start} - {edu.end}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{edu.institution}</p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">{edu.institution}</p>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No education details provided</p>
+                    )}
                   </div>
                 </section>
 
@@ -356,16 +360,19 @@ const VerifiedExpertsTable = () => {
                   </h4>
                   <div className="pl-10">
                     <div className="flex flex-wrap gap-2">
-                      {selectedExpert.skillsAndExpertise.domains.map((skill, i) => (
+                      {selectedExpert.skillsAndExpertise?.domains?.map((skill, i) => (
                         <span key={i} className="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-md border border-amber-100">
                           {skill}
                         </span>
                       ))}
-                      {selectedExpert.skillsAndExpertise.tools.map((skill, i) => (
+                      {selectedExpert.skillsAndExpertise?.tools?.map((skill, i) => (
                         <span key={`tool-${i}`} className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md border border-gray-200">
                           {skill}
                         </span>
                       ))}
+                      {(!selectedExpert.skillsAndExpertise?.domains?.length && !selectedExpert.skillsAndExpertise?.tools?.length) && (
+                        <p className="text-sm text-gray-500 italic">No skills provided</p>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -375,14 +382,20 @@ const VerifiedExpertsTable = () => {
               <section className="pt-4 border-t border-gray-100">
                 <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-4">Verification Documents</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <a
-                    href={selectedExpert.verification.linkedin}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
-                  >
-                    LinkedIn Profile
-                  </a>
+                  {selectedExpert.verification?.linkedin ? (
+                    <a
+                      href={selectedExpert.verification.linkedin}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                    >
+                      LinkedIn Profile
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 p-3 bg-gray-50 text-gray-400 rounded-lg text-sm font-medium italic">
+                      No LinkedIn provided
+                    </div>
+                  )}
                   {/* Placeholder buttons for documents if URLs were available */}
                   <button disabled className="flex items-center justify-center gap-2 p-3 bg-gray-50 text-gray-400 rounded-lg text-sm font-medium cursor-not-allowed">
                     Aadhar (Protected)

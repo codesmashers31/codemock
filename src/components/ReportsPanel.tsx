@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const ReportsPanel = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("weekly");
   const [exportFormat, setExportFormat] = useState("pdf");
 
   // Sample data
-  const reportData = {
+  const reportData: Record<string, any> = {
     daily: {
       revenue: 12420,
       users: 45,
@@ -48,12 +49,12 @@ const ReportsPanel = () => {
   ];
 
   const handleExport = () => {
-    alert(`Exporting ${selectedPeriod.toUpperCase()} report as ${exportFormat.toUpperCase()}`);
+    toast.info(`Exporting ${selectedPeriod.toUpperCase()} report as ${exportFormat.toUpperCase()}`);
   };
 
   const currentReport = reportData[selectedPeriod];
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -71,7 +72,7 @@ const ReportsPanel = () => {
               <h1 className="text-2xl font-semibold text-gray-900">Analytics Dashboard</h1>
               <p className="text-gray-600 mt-1 text-sm">Comprehensive reports and insights</p>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <select
                 value={exportFormat}
@@ -82,7 +83,7 @@ const ReportsPanel = () => {
                 <option value="excel">Export as Excel</option>
                 <option value="csv">Export as CSV</option>
               </select>
-              
+
               <button
                 onClick={handleExport}
                 className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
@@ -103,11 +104,10 @@ const ReportsPanel = () => {
               <button
                 key={period}
                 onClick={() => setSelectedPeriod(period)}
-                className={`px-6 py-2.5 rounded-md font-medium capitalize transition-colors ${
-                  selectedPeriod === period
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`px-6 py-2.5 rounded-md font-medium capitalize transition-colors ${selectedPeriod === period
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 {period}
               </button>
@@ -199,7 +199,7 @@ const ReportsPanel = () => {
               <h3 className="text-lg font-semibold text-gray-900">Revenue by Category</h3>
               <span className="text-sm text-gray-500">This {selectedPeriod}</span>
             </div>
-            
+
             <div className="space-y-4">
               {categoryData.map((category) => (
                 <div key={category.name} className="space-y-2">
@@ -229,7 +229,7 @@ const ReportsPanel = () => {
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -241,7 +241,7 @@ const ReportsPanel = () => {
                     <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
-                
+
                 <tbody>
                   {transactionData.map((transaction) => (
                     <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -258,11 +258,10 @@ const ReportsPanel = () => {
                       </td>
                       <td className="py-4 px-6 text-gray-600">{transaction.date}</td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          transaction.status === "Completed" 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${transaction.status === "Completed"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                          }`}>
                           {transaction.status}
                         </span>
                       </td>
@@ -277,7 +276,7 @@ const ReportsPanel = () => {
         {/* Summary Section */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Summary</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900">Performance Highlights</h4>
@@ -302,7 +301,7 @@ const ReportsPanel = () => {
                 </li>
               </ul>
             </div>
-            
+
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900">Top Metrics</h4>
               <ul className="space-y-2">
@@ -320,7 +319,7 @@ const ReportsPanel = () => {
                 </li>
               </ul>
             </div>
-            
+
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900">Recommendations</h4>
               <ul className="space-y-2">

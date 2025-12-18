@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 import { Card, IconButton, PrimaryButton, SecondaryButton } from '../pages/ExpertDashboard';
 
 
@@ -126,7 +127,7 @@ const ExpertAvailability = () => {
       });
     } catch (err) {
       console.error("Failed to delete weekly slot:", err);
-      alert("Failed to delete slot");
+      toast.error("Failed to delete slot");
     }
   };
 
@@ -163,7 +164,7 @@ const ExpertAvailability = () => {
       }));
     } catch (err) {
       console.error("Failed to delete break date:", err);
-      alert("Failed to delete break date");
+      toast.error("Failed to delete break date");
     }
   };
 
@@ -179,10 +180,10 @@ const ExpertAvailability = () => {
         payload
       );
 
-      alert("Availability saved successfully!");
+      toast.success("Availability saved successfully!");
     } catch (err) {
       console.error("Error saving:", err);
-      alert("Failed to save availability");
+      toast.error("Failed to save availability");
     }
   };
 

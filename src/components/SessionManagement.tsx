@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Search, RefreshCw, ArrowUpDown } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 
 interface Session {
   _id: string;
@@ -122,7 +122,6 @@ export default function SessionManagement() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-      <Toaster position="top-right" richColors />
 
       {/* Header */}
       <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

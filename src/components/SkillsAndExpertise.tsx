@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 import { Card, MultiSelect, PrimaryButton } from "../pages/ExpertDashboard";
 import { useAuth } from "../context/AuthContext";
 
@@ -103,11 +104,11 @@ const SkillsAndExpertise = () => {
         }
       );
 
-      alert("Skills saved successfully!");
+      toast.success("Skills saved successfully!");
     } catch (err: any) {
       console.error(err);
       const errorMsg = err.response?.data?.message || "Error saving skills!";
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

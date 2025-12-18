@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from "sonner";
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
 import { useAuth } from '../context/AuthContext';
 
@@ -100,13 +101,13 @@ const PersonalInfo = () => {
             const data = response.data;
             if (data.success) {
 
-                alert("Personal info updated successfully!");
+                toast.success("Personal info updated successfully!");
             } else {
-                alert("Failed to update personal info");
+                toast.error("Failed to update personal info");
             }
         } catch (err: any) {
             console.error(err);
-            alert(err.response?.data?.message || "Server error");
+            toast.error(err.response?.data?.message || "Server error");
         }
     };
 

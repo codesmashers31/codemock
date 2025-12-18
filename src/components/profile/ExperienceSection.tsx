@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Save, Plus, Trash2, Briefcase } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
 interface Experience {
@@ -55,12 +56,12 @@ export default function ExperienceSection({ profileData, onUpdate }: ExperienceS
             );
 
             if (response.data.success) {
-                alert("Experience updated successfully!");
+                toast.success("Experience updated successfully!");
                 onUpdate();
             }
         } catch (error) {
             console.error("Error updating experience:", error);
-            alert("Failed to update experience");
+            toast.error("Failed to update experience");
         } finally {
             setSaving(false);
         }

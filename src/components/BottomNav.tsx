@@ -1,5 +1,6 @@
 import { Home, User, Settings2 } from "lucide-react"; // or any React icons
 import React, { useState } from "react";
+import { toast } from "sonner";
 import Sidebar from "../components/Sidebar";
 
 const BottomNav = () => {
@@ -16,7 +17,7 @@ const BottomNav = () => {
           <User className="w-6 h-6" />
           <span className="text-xs">Profile</span>
         </button>
-        <button className="flex flex-col items-center gap-0.5 text-gray-700" onClick={() => alert("Settings clicked!")}>
+        <button className="flex flex-col items-center gap-0.5 text-gray-700" onClick={() => toast.info("Settings clicked!")}>
           <Settings2 className="w-6 h-6" />
           <span className="text-xs">Settings</span>
         </button>

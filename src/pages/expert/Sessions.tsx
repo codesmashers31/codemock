@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Video } from 'lucide-react';
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "sonner";
 
 export default function Sessions() {
     const navigate = useNavigate();
@@ -42,11 +43,11 @@ export default function Sessions() {
             if (res.ok && data.permitted) {
                 navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert&userId=${currentUserId}`);
             } else {
-                alert(data.message || "Cannot join session at this time.");
+                toast.error(data.message || "Cannot join session at this time.");
             }
         } catch (error) {
             console.error("Join Error:", error);
-            alert("Failed to join session.");
+            toast.error("Failed to join session.");
         } finally {
             setLoading(false);
         }
@@ -84,8 +85,8 @@ export default function Sessions() {
                             disabled={!isSessionActive(session) || loading}
                             title={!isSessionActive(session) ? `Available at ${new Date(session.startTime).toLocaleTimeString()}` : "Join Now"}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isSessionActive(session)
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                                 }`}
                         >
                             <Video size={18} />

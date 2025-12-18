@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Save, Upload } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import { Country, State, City } from "country-state-city";
 
@@ -90,12 +91,12 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
             );
 
             if (response.data.success) {
-                alert("Personal info updated successfully!");
+                toast.success("Personal info updated successfully!");
                 onUpdate();
             }
         } catch (error) {
             console.error("Error updating personal info:", error);
-            alert("Failed to update personal info");
+            toast.error("Failed to update personal info");
         } finally {
             setSaving(false);
         }
@@ -122,12 +123,12 @@ export default function PersonalInfoSection({ profileData, onUpdate }: PersonalI
             );
 
             if (response.data.success) {
-                alert("Profile image uploaded successfully!");
+                toast.success("Profile image uploaded successfully!");
                 onUpdate();
             }
         } catch (error) {
             console.error("Error uploading image:", error);
-            alert("Failed to upload image");
+            toast.error("Failed to upload image");
         } finally {
             setUploading(false);
         }

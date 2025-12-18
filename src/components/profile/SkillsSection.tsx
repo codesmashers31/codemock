@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { Save, Plus, X, Code, Heart, Globe } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
-export default function SkillsSection({ profileData, onUpdate }) {
+interface SkillsSectionProps {
+    profileData: {
+        skills?: {
+            technical?: string[];
+            soft?: string[];
+            languages?: string[];
+        };
+    };
+    onUpdate: () => void;
+}
+
+export default function SkillsSection({ profileData, onUpdate }: SkillsSectionProps) {
     const { user } = useAuth();
-    const [skills, setSkills] = useState({
+    const [skills, setSkills] = useState<{ technical: string[], soft: string[], languages: string[] }>({
         technical: profileData?.skills?.technical || [],
         soft: profileData?.skills?.soft || [],
         languages: profileData?.skills?.languages || []
@@ -13,7 +25,7 @@ export default function SkillsSection({ profileData, onUpdate }) {
     const [newSkill, setNewSkill] = useState({ technical: "", soft: "", languages: "" });
     const [saving, setSaving] = useState(false);
 
-    const addSkill = (type) => {
+    const addSkill = (type: "technical" | "soft" | "languages") => {
         if (newSkill[type].trim()) {
             setSkills({
                 ...skills,
@@ -23,7 +35,7 @@ export default function SkillsSection({ profileData, onUpdate }) {
         }
     };
 
-    const removeSkill = (type, index) => {
+    const removeSkill = (type: "technical" | "soft" | "languages", index: number) => {
         setSkills({
             ...skills,
             [type]: skills[type].filter((_, i) => i !== index)
@@ -40,18 +52,18 @@ export default function SkillsSection({ profileData, onUpdate }) {
             );
 
             if (response.data.success) {
-                alert("Skills updated successfully!");
+                toast.success("Skills updated successfully!");
                 onUpdate();
             }
         } catch (error) {
             console.error("Error updating skills:", error);
-            alert("Failed to update skills");
+            toast.error("Failed to update skills");
         } finally {
             setSaving(false);
         }
     };
 
-    const SkillTag = ({ skill, onRemove }) => (
+    const SkillTag = ({ skill, onRemove }: { skill: string, onRemove: () => void }) => (
         <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
             {skill}
             <button

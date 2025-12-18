@@ -15,6 +15,7 @@ import {
   X,
   MoreVertical
 } from "lucide-react";
+import { toast } from "sonner";
 import Navigation from "./Navigation";
 import BottomNav from "./BottomNav";
 import Footer from "./Footer";
@@ -149,11 +150,11 @@ const MySessions = () => {
       if (res.ok && data.permitted) {
         navigate(`/live-meeting?meetingId=${data.meetingId}&role=candidate&userId=${candidateId}`);
       } else {
-        alert(data.message || "Cannot join session at this time.");
+        toast.error(data.message || "Cannot join session at this time.");
       }
     } catch (error) {
       console.error("Join Error:", error);
-      alert("Failed to join session.");
+      toast.error("Failed to join session.");
     }
   };
 

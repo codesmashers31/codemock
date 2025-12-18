@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from "sonner";
 import { Card, Input, PrimaryButton } from '../pages/ExpertDashboard';
 import { useAuth } from '../context/AuthContext';
 import { Shield } from 'lucide-react';
@@ -19,6 +20,8 @@ const ExpertVerification = () => {
 
   // State to store verification status
   const [verificationStatus, setVerificationStatus] = useState<string>('pending');
+
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -67,17 +70,21 @@ const ExpertVerification = () => {
       formData.append('linkedin', profile.verification.linkedin);
 
       // Add userid header as needed, replace userId with actual user ID
-      const response = await axios.put('/api/expert/verification', formData, {
+      setSaving(true);
+      await axios.put('/api/expert/verification', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      alert('Verification saved successfully!');
+      toast.success('Verification saved successfully!');
+      fetchProfile(); // Refresh profile to get updated verification status
 
     } catch (error: any) {
       console.error('Error saving verification:', error);
-      alert('Failed to save verification.');
+      toast.error('Failed to save verification.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -160,7 +167,13 @@ const ExpertVerification = () => {
         </div>
 
         <div className="mt-6 flex justify-end">
-          <PrimaryButton onClick={saveVerification}>Save Changes</PrimaryButton>
+          <PrimaryButton
+            onClick={saveVerification}
+            loading={saving}
+            disabled={saving}
+          >
+            Save Changes
+          </PrimaryButton>
         </div>
       </Card>
     </>

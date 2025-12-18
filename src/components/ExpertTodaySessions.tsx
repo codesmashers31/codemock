@@ -1,6 +1,7 @@
 
 import { useNavigate } from 'react-router-dom'
 import { Card, PrimaryButton } from '../pages/ExpertDashboard'
+import { toast } from "sonner"
 
 
 
@@ -36,11 +37,11 @@ const ExpertTodaySessions = () => {
       if (data.success) {
         navigate(`/live-meeting?meetingId=${data.meetingId}&role=expert`);
       } else {
-        alert('Failed to create meeting');
+        toast.error('Failed to create meeting');
       }
     } catch (error) {
       console.error('Error creating meeting:', error);
-      alert('Error connecting to server');
+      toast.error('Error connecting to server');
     }
   };
 

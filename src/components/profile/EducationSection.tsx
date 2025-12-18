@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Save, Plus, Trash2, GraduationCap } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
 interface Education {
@@ -55,12 +56,12 @@ export default function EducationSection({ profileData, onUpdate }: EducationSec
             );
 
             if (response.data.success) {
-                alert("Education updated successfully!");
+                toast.success("Education updated successfully!");
                 onUpdate();
             }
         } catch (error) {
             console.error("Error updating education:", error);
-            alert("Failed to update education");
+            toast.error("Failed to update education");
         } finally {
             setSaving(false);
         }

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, IconButton, Input, PrimaryButton, SecondaryButton } from "../pages/ExpertDashboard";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 
 const ExpertProfession = () => {
@@ -74,11 +75,11 @@ const ExpertProfession = () => {
       );
 
       if (!res.data.success) {
-        alert("Failed to remove experience in DB");
+        toast.error("Failed to remove experience in DB");
       }
     } catch (err: any) {
       console.error("Error removing experience:", err);
-      alert("Server error");
+      toast.error("Server error");
     }
   };
 
@@ -91,13 +92,13 @@ const ExpertProfession = () => {
       );
 
       if (res.data.success) {
-        alert("Professional details saved successfully!");
+        toast.success("Professional details saved successfully!");
       } else {
-        alert("Failed to save professional info");
+        toast.error("Failed to save professional info");
       }
     } catch (err: any) {
       console.error(err);
-      alert("Server error");
+      toast.error("Server error");
     }
   };
 

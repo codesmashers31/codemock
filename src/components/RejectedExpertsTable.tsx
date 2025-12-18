@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 
 interface PersonalInformation {
   userName: string;
@@ -171,7 +171,6 @@ const RejectedExpertsTable: React.FC = () => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-      <Toaster position="top-right" richColors />
 
       {/* Header with Search */}
       <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -273,8 +272,8 @@ const RejectedExpertsTable: React.FC = () => {
                       key={page}
                       onClick={() => handlePageChange(page)}
                       className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                          ? 'bg-red-600 text-white'
-                          : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-red-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-50'
                         }`}
                     >
                       {page}

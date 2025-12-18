@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, Input, PrimaryButton, SecondaryButton, IconButton } from "../pages/ExpertDashboard";
 import axios from "axios";
+import { toast } from "sonner";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -60,7 +61,7 @@ const ExpertEducation = () => {
     // ---------------- Save / Upsert ----------------
     const saveEducation = async () => {
         if (!userId) {
-            alert("User not logged in");
+            toast.error("User not logged in");
             return;
         }
 
@@ -71,13 +72,13 @@ const ExpertEducation = () => {
             );
 
             if (response.data.success) {
-                alert("Education saved successfully!");
+                toast.success("Education saved successfully!");
             } else {
-                alert("Failed to save education");
+                toast.error("Failed to save education");
             }
         } catch (err) {
             console.error(err);
-            alert("Server error");
+            toast.error("Server error");
         }
     };
 
@@ -96,11 +97,11 @@ const ExpertEducation = () => {
             );
 
             if (!response.data.success) {
-                alert("Failed to remove education in DB");
+                toast.error("Failed to remove education in DB");
             }
         } catch (err) {
             console.error("Error removing education:", err);
-            alert("Server error");
+            toast.error("Server error");
         }
     };
 

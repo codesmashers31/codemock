@@ -1,6 +1,7 @@
 import { useState, ChangeEvent } from "react";
 import { Save, DollarSign, Clock, MapPin, Briefcase } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 
 interface PreferencesSectionProps {
@@ -44,12 +45,12 @@ export default function PreferencesSection({ profileData, onUpdate }: Preference
             );
 
             if (response.data.success) {
-                alert("Preferences updated successfully!");
+                toast.success("Preferences updated successfully!");
                 onUpdate();
             }
         } catch (error) {
             console.error("Error updating preferences:", error);
-            alert("Failed to update preferences");
+            toast.error("Failed to update preferences");
         } finally {
             setSaving(false);
         }

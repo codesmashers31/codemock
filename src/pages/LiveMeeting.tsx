@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Camera, CameraOff, Mic, MicOff, MoreVertical, PhoneOff,
-  Settings, MessageSquare, Users, Laptop, Maximize2
+  Camera, CameraOff, Mic, MicOff,
 } from 'lucide-react';
+import { toast } from "sonner";
 import { useWebRTC } from '../meeting/hooks/useWebRTC';
 import { useSignaling } from '../meeting/hooks/useSignaling';
 import { VideoTile } from './meeting/VideoTile';
@@ -100,7 +100,7 @@ export default function LiveMeeting() {
       resetPeerConnection();
     },
     onMeetingEnded: () => {
-      alert("Meeting has been ended by the host.");
+      toast.info("Meeting has been ended by the host.");
       cleanup();
       navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
       navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
@@ -121,7 +121,7 @@ export default function LiveMeeting() {
         if (msg === "Unauthorized" || msg === "Meeting has ended") {
           setAccessDenied(true);
           setStatus(`Error: ${msg}`);
-          alert(msg);
+          toast.error(msg);
           cleanup();
           navigate(role === 'expert' ? '/dashboard/sessions' : '/my-sessions');
         }
