@@ -1,6 +1,7 @@
-// src/components/ExpertProfileHeader.jsx
 import { useEffect, useRef, useState, ReactNode } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
 import { Card, SecondaryButton } from "../pages/ExpertDashboard";
 import { Shield } from "lucide-react";
@@ -52,19 +53,18 @@ function ProgressRing({ size = 110, stroke = 8, percent = 0, children }: { size?
   );
 }
 
-const ExpertProfileHeader = () => {
-
-
+const ExpertProfileHeader = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const { user } = useAuth();
-
-
+  const navigate = useNavigate();
+  const location = useLocation();
 
   /* token removed */
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "", status: "pending" });
+  const [profile, setProfile] = useState({ name: "", title: "", company: "", photoUrl: "", status: "pending", rejectionReason: "" });
   const [completion, setCompletion] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [missingSections, setMissingSections] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,8 +84,6 @@ const ExpertProfileHeader = () => {
     try {
       const res = await axios.get("/api/expert/profile");
 
-
-
       if (res.data?.success) {
         const p = res.data.profile || {};
         setProfile({
@@ -93,15 +91,28 @@ const ExpertProfileHeader = () => {
           title: p.title || "",
           company: p.company || "",
           photoUrl: p.photoUrl || "",
-          status: p.status || "pending"
+          status: p.status || "pending",
+          rejectionReason: p.rejectionReason || ""
         });
         setCompletion(typeof res.data.completion === "number" ? res.data.completion : 0);
+        setMissingSections(res.data.missingSections || []);
       } else {
         setError(res.data?.message || "Failed to fetch profile");
         setProfile(prev => ({ ...prev, name: fallbackName }));
       }
     } catch (err: any) {
       console.error("fetchProfile error:", err);
+
+      // Check for 404 specifically
+      if (err.response && err.response.status === 404) {
+        if (location.pathname !== "/dashboard/profile") {
+          toast.error("Expert profile not found. Please complete your profile.");
+          navigate("/dashboard/profile");
+        }
+        setProfile(prev => ({ ...prev, name: fallbackName }));
+        return;
+      }
+
       const msg = err?.response?.data?.message || err.message || "Error fetching profile";
       setError(msg);
       setProfile(prev => ({ ...prev, name: fallbackName }));
@@ -132,8 +143,6 @@ const ExpertProfileHeader = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-
-
       if (res.data?.success) {
         const p = res.data.profile || {};
         setProfile(prev => ({
@@ -142,9 +151,12 @@ const ExpertProfileHeader = () => {
           title: p.title || prev.title,
           company: p.company || prev.company,
           photoUrl: p.photoUrl || prev.photoUrl,
-          status: p.status || prev.status
+
+          status: p.status || prev.status,
+          rejectionReason: p.rejectionReason || prev.rejectionReason
         }));
         setCompletion(typeof res.data.completion === "number" ? res.data.completion : completion);
+        setMissingSections(res.data.missingSections || missingSections);
       } else {
         setError(res.data?.message || "Upload failed");
       }
@@ -156,6 +168,26 @@ const ExpertProfileHeader = () => {
       setUploading(false);
     }
   };
+
+  const handleResubmit = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post("/api/expert/resubmit");
+      if (res.data.success) {
+        toast.success("Profile resubmitted for verification!");
+        fetchProfile(); // refresh status
+      } else {
+        toast.error(res.data.message || "Resubmission failed");
+      }
+    } catch (err: any) {
+      console.error("Resubmit error:", err);
+      toast.error("Failed to resubmit profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   return (
     <Card className="text-center relative">
@@ -213,7 +245,87 @@ const ExpertProfileHeader = () => {
           </SecondaryButton>
         </div>
 
-        <div className="mt-5 text-sm font-medium text-gray-700">{completion}% complete</div>
+        <div className="mt-5 text-sm font-medium text-gray-700">
+          {completion}% complete
+          {completion >= 100 ? (
+            <div className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <span className="text-green-600 font-bold block mb-1">🎉 Profile Completed!</span>
+              <button
+                onClick={() => navigate("/dashboard/profile")}
+                className="text-blue-600 hover:text-blue-800 text-xs underline decoration-blue-300 underline-offset-4"
+              >
+                View Profile Settings
+              </button>
+            </div>
+          ) : (
+            <div className={`mt-3 border rounded p-2 animate-in fade-in slide-in-from-bottom-2 duration-500 text-left ${profile.status === "rejected" ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`}>
+              <div className="flex items-center gap-2 mb-1 justify-center">
+                <span className={`text-xs ${profile.status === "rejected" ? "text-red-500" : "text-amber-500"}`}>
+                  {profile.status === "rejected" ? "🚫" : "⚠️"}
+                </span>
+                <span className={`font-semibold text-xs text-center ${profile.status === "rejected" ? "text-red-700" : "text-amber-700"}`}>
+                  {profile.status === "rejected" ? "Application Rejected" : "Action Required"}
+                </span>
+              </div>
+
+              {profile.status === "rejected" ? (
+                <>
+                  <p className="text-xs text-red-600 leading-relaxed text-center mb-2">
+                    {profile.rejectionReason || "Your application was rejected. Please review your profile and update accordingly."}
+                  </p>
+                  <div className="flex justify-center mt-3">
+                    <button
+                      onClick={handleResubmit}
+                      className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
+                    >
+                      Resubmit Application
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-amber-600 leading-relaxed text-center mb-2">
+                    Please complete the following sections to get verified:
+                  </p>
+                  <ul className="text-xs text-amber-700 list-disc pl-8 space-y-0.5">
+                    {missingSections.length > 0 ? (
+                      missingSections.map((section, idx) => {
+                        const tabMap: Record<string, string> = {
+                          "Personal Information": "personal",
+                          "Education": "education",
+                          "Professional Details": "profession",
+                          "Skills & Expertise": "profession",
+                          "Availability": "availability",
+                          "Profile Photo": "overview",
+                          "Verification Documents": "verification"
+                        };
+                        const targetTab = tabMap[section] || "overview";
+
+                        return (
+                          <li key={idx} className="font-medium">
+                            {onNavigate ? (
+                              <button
+                                onClick={() => onNavigate(targetTab)}
+                                className="underline hover:text-amber-900 text-left"
+                              >
+                                {section}
+                              </button>
+                            ) : (
+                              <span>{section}</span>
+                            )}
+                          </li>
+                        );
+                      })
+                    ) : (
+                      <li>Complete all profile details</li>
+                    )}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
 
         {error && (
           <div className="mt-3 text-xs text-red-600 flex flex-col items-center">
@@ -223,8 +335,8 @@ const ExpertProfileHeader = () => {
         )}
 
         {loading && <div className="mt-3 text-xs text-gray-500">Loading profile...</div>}
-      </div>
-    </Card>
+      </div >
+    </Card >
   );
 };
 

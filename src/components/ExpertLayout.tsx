@@ -10,7 +10,7 @@ export default function ExpertLayout({ active = "dashboard" }: { active?: string
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
-        <SideNav isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} active={active} />
+        <SideNav isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <div className="flex-1 min-h-screen">
           <TopNav onOpenSidebar={() => setSidebarOpen(true)} />

@@ -85,6 +85,23 @@ const ExpertAvailability = () => {
   /* ----------------- Weekly Slot Management ----------------- */
 
   const addSlotForDay = (day: string) => {
+    const currentSlots = profile.availability.weekly[day] || [];
+    const maxPerDay = profile.availability.maxPerDay || 1;
+    const sessionDuration = profile.availability.sessionDuration || 30;
+
+    // Validation 1: User defined limit
+    if (currentSlots.length >= maxPerDay) {
+      toast.error(`Daily limit reached: You can only have ${maxPerDay} session(s) per day.`);
+      return;
+    }
+
+    // Validation 2: Physical time limit (24 hours)
+    const maxPossibleSlots = Math.floor((24 * 60) / sessionDuration);
+    if (currentSlots.length >= maxPossibleSlots) {
+      toast.error(`Cannot add more sessions. 24-hour limit reached for ${sessionDuration} min sessions.`);
+      return;
+    }
+
     setProfile((p) => {
       const weekly = { ...p.availability.weekly };
       weekly[day] = [...(weekly[day] || []), { from: "", to: "" }];
@@ -114,7 +131,18 @@ const ExpertAvailability = () => {
     try {
       const slot = profile.availability.weekly[day][idx];
 
-      // Call backend DELETE endpoint
+      // If 'from' is missing, it's a draft slot (not saved in DB yet).
+      // We can just remove it from state without calling the API.
+      if (!slot.from) {
+        setProfile((p) => {
+          const weekly = { ...p.availability.weekly };
+          weekly[day] = weekly[day].filter((_, i) => i !== idx);
+          return { ...p, availability: { ...p.availability, weekly } };
+        });
+        return;
+      }
+
+      // Call backend DELETE endpoint for saved slots
       await axios.delete("/api/expert/availability/delslot", {
         data: { day, from: slot.from } // identify slot by day + start time
       });
@@ -253,7 +281,7 @@ const ExpertAvailability = () => {
                   {(profile.availability.weekly[d] || []).length === 0 ? (
                     <div className="text-sm text-gray-500 text-center py-4">No slots</div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                       {(profile.availability.weekly[d] || []).map((slot, i) => (
                         <div key={i} className="flex items-center gap-3">
                           <div className="flex-1">

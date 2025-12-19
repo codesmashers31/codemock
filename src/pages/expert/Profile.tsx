@@ -1,5 +1,5 @@
 // src/pages/expert/Profile.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import ExpertProfileHeader from "../../components/ExpertProfileHeader";
 import PersonalInfo from "../../components/PersonalInfo";
 import ExpertEducation from "../../components/ExpertEducation";
@@ -20,7 +20,7 @@ export default function ProfilePage() {
   const renderContent = () => {
     switch (active) {
       case "overview":
-        return <ExpertProfileHeader />;
+        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} />;
       case "personal":
         return <PersonalInfo />;
       case "education":
@@ -30,7 +30,7 @@ export default function ProfilePage() {
       case "verification":
         return <ExpertVerification />;
       default:
-        return <ExpertProfileHeader />;
+        return <ExpertProfileHeader onNavigate={(tab) => setActive(tab)} />;
     }
   };
 

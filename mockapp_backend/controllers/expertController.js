@@ -54,27 +54,81 @@ const toObjectId = (id) => {
   return new mongoose.Types.ObjectId(id);
 };
 
+/* -------------------- getMissingSectionsHelper -------------------- */
+const getMissingSections = (expert) => {
+  const missing = [];
+
+  // Personal Info
+  const p = expert.personalInformation || {};
+  const personalFilled = p.userName && p.mobile && p.gender && p.dob && p.country && p.state && p.city;
+  if (!personalFilled) missing.push("Personal Information");
+
+  // Education
+  if (!Array.isArray(expert.education) || !expert.education.length) missing.push("Education");
+
+  // Professional Details
+  const pd = expert.professionalDetails || {};
+  const proFilled = pd.title && pd.company && pd.industry && (typeof pd.totalExperience === "number");
+  if (!proFilled) missing.push("Professional Details");
+
+  // Skills
+  const sk = expert.skillsAndExpertise || {};
+  if (!(sk.domains?.length || sk.tools?.length || sk.languages?.length)) missing.push("Skills & Expertise");
+
+  // Availability
+  const av = expert.availability || {};
+  const weeklyObj = av.weekly || {};
+  const weeklyHasSlots = Object.values(weeklyObj || {}).some(arr => Array.isArray(arr) && arr.length > 0);
+  const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
+  if (!availabilityFilled) missing.push("Availability");
+
+  // Profile Photo
+  if (!expert.profileImage) missing.push("Profile Photo");
+
+  // Verification
+  const v = expert.verification || {};
+  const verificationFilled = v.companyId?.url && v.aadhar?.url && v.linkedin;
+  if (!verificationFilled) missing.push("Verification Documents");
+
+  return missing;
+};
+
 /* -------------------- computeCompletion -------------------- */
 const computeCompletion = (expert) => {
   let score = 0;
+
+  // Personal Info (20%)
   const p = expert.personalInformation || {};
-  const personalFilled =
-    p.userName && p.mobile && p.gender && p.dob && p.country && p.state && p.city;
-  if (personalFilled) score += 25;
+  const personalFilled = p.userName && p.mobile && p.gender && p.dob && p.country && p.state && p.city;
+  if (personalFilled) score += 20;
+
+  // Education (15%)
   if (Array.isArray(expert.education) && expert.education.length) score += 15;
+
+  // Professional Details (20%)
   const pd = expert.professionalDetails || {};
-  const proFilled =
-    pd.title && pd.company && pd.industry && (typeof pd.totalExperience === "number");
+  const proFilled = pd.title && pd.company && pd.industry && (typeof pd.totalExperience === "number");
   if (proFilled) score += 20;
+
+  // Skills (15%)
   const sk = expert.skillsAndExpertise || {};
   if ((sk.domains?.length || sk.tools?.length || sk.languages?.length)) score += 15;
+
+  // Availability (15%)
   const av = expert.availability || {};
   // ensure weekly is treated as plain object
   const weeklyObj = av.weekly || {};
   const weeklyHasSlots = Object.values(weeklyObj || {}).some(arr => Array.isArray(arr) && arr.length > 0);
   const availabilityFilled = av.sessionDuration && av.maxPerDay && (weeklyHasSlots || (av.breakDates && av.breakDates.length > 0));
   if (availabilityFilled) score += 15;
-  if (expert.profileImage) score += 10;
+
+  // Profile Photo (5%)
+  if (expert.profileImage) score += 5;
+
+  // Verification (10%)
+  const v = expert.verification || {};
+  if (v.companyId?.url && v.aadhar?.url && v.linkedin) score += 10;
+
   return Math.min(score, 100);
 };
 
@@ -135,6 +189,7 @@ export const uploadProfilePhoto = async (req, res) => {
     await expert.save();
 
     const completion = computeCompletion(expert);
+    const missingSections = getMissingSections(expert);
 
     const profile = {
       name: expert.personalInformation?.userName || "",
@@ -143,7 +198,7 @@ export const uploadProfilePhoto = async (req, res) => {
       photoUrl: expert.profileImage || ""
     };
 
-    return res.json({ success: true, message: "Photo uploaded", completion, profile });
+    return res.json({ success: true, message: "Photo uploaded", completion, missingSections, profile });
   } catch (err) {
     console.error("uploadProfilePhoto error:", err);
     return res.status(500).json({ success: false, message: err.message || "Internal server error" });
@@ -224,6 +279,33 @@ export const uploadVerificationDocs = async (req, res) => {
   }
 };
 
+/* -------------------- resubmitProfile -------------------- */
+export const resubmitProfile = async (req, res) => {
+  try {
+    const userIdRaw = resolveUserIdFromReq(req);
+    if (!userIdRaw) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+    const queryUserId = toObjectId(userIdRaw);
+    const expert = await ExpertDetails.findOne({ userId: queryUserId });
+
+    if (!expert) return res.status(404).json({ success: false, message: "Expert not found" });
+
+    // Only allow resubmission if currently rejected
+    if (expert.status !== "rejected") {
+      return res.status(400).json({ success: false, message: "Only rejected profiles can be resubmitted." });
+    }
+
+    expert.status = "pending";
+    expert.rejectionReason = ""; // Clear reason on resubmit
+    await expert.save();
+
+    return res.json({ success: true, message: "Profile resubmitted for verification", status: "pending" });
+  } catch (err) {
+    console.error("resubmitProfile error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 /* -------------------- getExpertProfile -------------------- */
 export const getExpertProfile = async (req, res) => {
   try {
@@ -252,12 +334,14 @@ export const getExpertProfile = async (req, res) => {
       availability: expert.availability || { sessionDuration: 30, maxPerDay: 1, weekly: {}, breakDates: [] },
       verification: expert.verification || {},
       status: expert.status || "pending",
+      rejectionReason: expert.rejectionReason || "",
       photoUrl: expert.profileImage || "",
       category: expert.personalInformation?.category || ""
     };
 
     const completion = computeCompletion(expert);
-    return res.json({ success: true, completion, profile });
+    const missingSections = getMissingSections(expert);
+    return res.json({ success: true, completion, missingSections, profile });
   } catch (err) {
     console.error("getExpertProfile error:", err);
     return res.status(500).json({ success: false, message: err.message || "Internal server error" });

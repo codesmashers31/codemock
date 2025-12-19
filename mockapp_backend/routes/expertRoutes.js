@@ -25,7 +25,8 @@ import {
   getExpertById,
   getRejectedExperts,
   approveExpert,
-  rejectExpert
+  rejectExpert,
+  resubmitProfile
 } from "../controllers/expertController.js";
 
 import { authenticateToken } from "../controllers/authController.js";
@@ -70,6 +71,7 @@ router.get("/availability", getAvailability);
 router.put("/availability", updateAvailability);
 router.delete("/availability/delbreak", deleteBreakDate);
 router.delete("/availability/delslot", deleteWeeklySlot);
+router.post("/resubmit", resubmitProfile);
 
 // Verification
 router.put(

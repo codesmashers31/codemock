@@ -50,7 +50,7 @@ const PersonalInfo = () => {
 
                     setProfile({
                         personal: {
-                            name: data.userName || "",
+                            name: data.userName || user?.name || "",
                             phone: data.mobile || "",
                             gender: data.gender || "",
                             dob: data.dob ? data.dob.split("T")[0] : "",
@@ -60,6 +60,14 @@ const PersonalInfo = () => {
                             category: data.category || ""
                         }
                     });
+                } else if (user?.name) {
+                    setProfile(prev => ({
+                        ...prev,
+                        personal: {
+                            ...prev.personal,
+                            name: user.name || ""
+                        }
+                    }));
                 }
             } catch (err: any) {
                 console.error("Failed to fetch personal info:", err);
